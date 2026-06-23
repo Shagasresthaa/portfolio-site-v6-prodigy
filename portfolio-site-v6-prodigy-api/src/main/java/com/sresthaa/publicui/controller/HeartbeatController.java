@@ -7,11 +7,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class HelloWorld {
+public class HeartbeatController {
 	
-	@GetMapping("/hello")
-	public ResponseEntity<Map<String, String>> hello() {
-	    return ResponseEntity.ok(Map.of("message", "hello"));
+	@GetMapping("/heartbeat")
+	public ResponseEntity<Map<String, String>> heartbeat() {
+	    return ResponseEntity.ok(Map.of("status", "OK"));
 	}
 	
 }
