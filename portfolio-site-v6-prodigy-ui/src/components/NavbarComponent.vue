@@ -1,159 +1,162 @@
 <template>
   <Disclosure
     as="nav"
-    class="relative bg-gray-800/50 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10"
     v-slot="{ open }"
+    class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-gray-900/80"
   >
-    <div class="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-      <div class="relative flex h-16 items-center justify-between">
-        <div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
-          <!-- Mobile menu button-->
-          <DisclosureButton
-            class="relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-white/5 hover:text-white focus:outline-2 focus:-outline-offset-1 focus:outline-indigo-500"
-          >
-            <span class="absolute -inset-0.5"></span>
-            <span class="sr-only">Open main menu</span>
-            <Bars3Icon v-if="!open" class="block size-6" aria-hidden="true" />
-            <XMarkIcon v-else class="block size-6" aria-hidden="true" />
-          </DisclosureButton>
-        </div>
-        <div class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
-          <div class="flex shrink-0 items-center">
-            <img
-              class="h-8 w-auto"
-              src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
-              alt="Your Company"
-            />
-          </div>
-          <div class="hidden sm:ml-6 sm:block">
-            <div class="flex space-x-4">
-              <a
-                v-for="item in navigation"
-                :key="item.name"
-                :href="item.href"
-                :class="[
-                  item.current
-                    ? 'bg-gray-950/50 text-white'
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white',
-                  'rounded-md px-3 py-2 text-sm font-medium',
-                ]"
-                :aria-current="item.current ? 'page' : undefined"
-                >{{ item.name }}</a
-              >
-            </div>
-          </div>
-        </div>
+    <div class="flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
+      <RouterLink
+        to="/"
+        class="text-lg font-semibold tracking-tight text-gray-900 dark:text-white"
+      >
+        {{ route.meta.title }}
+      </RouterLink>
+
+      <div class="flex items-center gap-4">
         <div
-          class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0"
+          class="relative hidden md:flex md:items-center md:gap-1"
+          @mouseleave="hoverIndex = null"
         >
+          <span
+            class="pointer-events-none absolute top-0 left-0 h-full rounded-full bg-gray-900 transition-[transform,width] duration-300 ease-out dark:bg-white"
+            :style="indicatorStyle"
+          />
+          <a
+            v-for="(item, index) in navigation"
+            :key="item.name"
+            :ref="(el) => setItemRef(el, index)"
+            :href="item.href"
+            :class="[
+              highlightIndex === index
+                ? 'text-white dark:text-gray-900'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
+              'relative z-10 flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors',
+            ]"
+            :aria-current="isCurrent(item) ? 'page' : undefined"
+            @mouseenter="hoverIndex = index"
+          >
+            <FontAwesomeIcon :icon="item.icon" class="size-4" aria-hidden="true" />
+            <span>{{ item.name }}</span>
+          </a>
+        </div>
+
+        <div class="flex items-center gap-1">
           <button
             type="button"
-            class="relative rounded-full p-1 text-gray-400 hover:text-white focus:outline-2 focus:outline-offset-2 focus:outline-indigo-500"
+            class="relative rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-900/5 hover:text-gray-900 focus-visible:bg-gray-900/5 focus-visible:text-gray-900 focus-visible:outline-none dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:bg-white/10 dark:focus-visible:text-white"
+            @click="themeStore.toggleTheme()"
           >
-            <span class="absolute -inset-1.5"></span>
-            <span class="sr-only">View notifications</span>
-            <BellIcon class="size-6" aria-hidden="true" />
+            <span class="sr-only">Toggle theme</span>
+            <SunIcon v-if="themeStore.theme === 'dark'" class="size-5" aria-hidden="true" />
+            <MoonIcon v-else class="size-5" aria-hidden="true" />
           </button>
 
-          <!-- Profile dropdown -->
-          <Menu as="div" class="relative ml-3">
-            <MenuButton
-              class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-            >
-              <span class="absolute -inset-1.5"></span>
-              <span class="sr-only">Open user menu</span>
-              <img
-                class="size-8 rounded-full bg-gray-800 outline -outline-offset-1 outline-white/10"
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                alt=""
-              />
-            </MenuButton>
-
-            <transition
-              enter-active-class="transition ease-out duration-100"
-              enter-from-class="transform opacity-0 scale-95"
-              enter-to-class="transform scale-100"
-              leave-active-class="transition ease-in duration-75"
-              leave-from-class="transform scale-100"
-              leave-to-class="transform opacity-0 scale-95"
-            >
-              <MenuItems
-                class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-gray-800 py-1 outline -outline-offset-1 outline-white/10"
-              >
-                <MenuItem v-slot="{ active }">
-                  <a
-                    href="#"
-                    :class="[
-                      active ? 'bg-white/5 outline-hidden' : '',
-                      'block px-4 py-2 text-sm text-gray-300',
-                    ]"
-                    >Your profile</a
-                  >
-                </MenuItem>
-                <MenuItem v-slot="{ active }">
-                  <a
-                    href="#"
-                    :class="[
-                      active ? 'bg-white/5 outline-hidden' : '',
-                      'block px-4 py-2 text-sm text-gray-300',
-                    ]"
-                    >Settings</a
-                  >
-                </MenuItem>
-                <MenuItem v-slot="{ active }">
-                  <a
-                    href="#"
-                    :class="[
-                      active ? 'bg-white/5 outline-hidden' : '',
-                      'block px-4 py-2 text-sm text-gray-300',
-                    ]"
-                    >Sign out</a
-                  >
-                </MenuItem>
-              </MenuItems>
-            </transition>
-          </Menu>
+          <DisclosureButton
+            class="relative rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-900/5 hover:text-gray-900 focus-visible:bg-gray-900/5 focus-visible:text-gray-900 focus-visible:outline-none md:hidden dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:bg-white/10 dark:focus-visible:text-white"
+          >
+            <span class="sr-only">Open main menu</span>
+            <Bars3Icon v-if="!open" class="size-6" aria-hidden="true" />
+            <XMarkIcon v-else class="size-6" aria-hidden="true" />
+          </DisclosureButton>
         </div>
       </div>
     </div>
 
-    <DisclosurePanel class="sm:hidden">
-      <div class="space-y-1 px-2 pt-2 pb-3">
+    <DisclosurePanel class="md:hidden">
+      <div class="space-y-1 border-t border-gray-200 px-4 pt-2 pb-3 dark:border-white/10">
         <DisclosureButton
           v-for="item in navigation"
           :key="item.name"
           as="a"
           :href="item.href"
           :class="[
-            item.current
-              ? 'bg-gray-950/50 text-white'
-              : 'text-gray-300 hover:bg-white/5 hover:text-white',
-            'block rounded-md px-3 py-2 text-base font-medium',
+            isCurrent(item)
+              ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+              : 'text-gray-600 hover:bg-gray-900/5 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white',
+            'flex items-center gap-2 rounded-lg px-3 py-2 text-base font-medium transition-colors',
           ]"
-          :aria-current="item.current ? 'page' : undefined"
-          >{{ item.name }}</DisclosureButton
+          :aria-current="isCurrent(item) ? 'page' : undefined"
         >
+          <FontAwesomeIcon :icon="item.icon" class="size-4" aria-hidden="true" />
+          <span>{{ item.name }}</span>
+        </DisclosureButton>
       </div>
     </DisclosurePanel>
   </Disclosure>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
+import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
+import { Bars3Icon, MoonIcon, SunIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import {
-  Disclosure,
-  DisclosureButton,
-  DisclosurePanel,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
-} from '@headlessui/vue'
-import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+  faEnvelope,
+  faFolderOpen,
+  faHouse,
+  faPenNib,
+  faStar,
+} from '@fortawesome/free-solid-svg-icons'
+import { useThemeStore } from '@/stores/theme'
+
+const themeStore = useThemeStore()
+const route = useRoute()
 
 const navigation = [
-  { name: 'Dashboard', href: '#', current: true },
-  { name: 'Team', href: '#', current: false },
-  { name: 'Projects', href: '#', current: false },
-  { name: 'Calendar', href: '#', current: false },
+  { name: 'Home', href: '/', icon: faHouse },
+  { name: 'Projects', href: '#', icon: faFolderOpen },
+  { name: 'Blog', href: '#', icon: faPenNib },
+  { name: 'Highlights', href: '#', icon: faStar },
+  { name: 'Contact', href: '#', icon: faEnvelope },
 ]
+
+function isCurrent(item: (typeof navigation)[number]) {
+  return item.href === route.path
+}
+
+const itemEls = ref<(HTMLElement | null)[]>([])
+
+function setItemRef(el: Element | { $el: Element } | null, index: number) {
+  itemEls.value[index] = (el as HTMLElement | null) ?? null
+}
+
+const hoverIndex = ref<number | null>(null)
+const activeIndex = computed(() => {
+  const index = navigation.findIndex(isCurrent)
+  return index === -1 ? null : index
+})
+const highlightIndex = computed(() => hoverIndex.value ?? activeIndex.value)
+
+const indicatorStyle = ref({ opacity: '0', transform: 'translateX(0px)', width: '0px' })
+
+function updateIndicator() {
+  const index = highlightIndex.value
+  if (index === null) {
+    indicatorStyle.value = { ...indicatorStyle.value, opacity: '0' }
+    return
+  }
+  const el = itemEls.value[index]
+  if (!el) return
+  indicatorStyle.value = {
+    opacity: '1',
+    transform: `translateX(${el.offsetLeft}px)`,
+    width: `${el.offsetWidth}px`,
+  }
+}
+
+watch(highlightIndex, () => nextTick(updateIndicator))
+
+function handleResize() {
+  updateIndicator()
+}
+
+onMounted(() => {
+  nextTick(updateIndicator)
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 </script>

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Monorepo with two independent sub-projects:
 
-- `portfolio-site-v6-prodigy-ui/` — Vue 3 frontend (Vite, TypeScript, Pinia, Vue Router)
+- `portfolio-site-v6-prodigy-ui/` — Vue 3 frontend (Vite, TypeScript, Pinia, Vue Router, Tailwind CSS 4)
 - `portfolio-site-v6-prodigy-api/` — Spring Boot 4 backend (Java 21, JPA, PostgreSQL)
 
 ## UI Commands
@@ -43,8 +43,12 @@ Requires Java 21. The app expects a running PostgreSQL instance configured exter
 
 ## Architecture
 
-**Frontend** — Vue 3 Composition API with `<script setup>`. State via Pinia stores (`src/stores/`). Routing via Vue Router 5 with web history (`src/router/index.ts`). Views live in `src/views/`, reusable components in `src/components/`. The `/about` route is lazy-loaded (code-split).
+**Frontend** — Vue 3 Composition API with `<script setup>`. Styling via Tailwind CSS 4 (`@tailwindcss/vite` plugin) with `@headlessui/vue` and `@heroicons/vue`. State via Pinia stores (`src/stores/` — directory exists, no stores created yet). Routing via Vue Router 5 with web history (`src/router/index.ts`). Views live in `src/views/`, reusable components in `src/components/`. Currently only the `/` (home) route exists.
 
-**Backend** — Spring Boot 4 with Spring MVC (`spring-boot-starter-webmvc`) and Spring Data JPA backed by PostgreSQL. The base package is `com.sresthaa`. No additional layers or controllers exist yet — the project is in early scaffolding.
+**Backend** — Spring Boot 4 with Spring MVC (`spring-boot-starter-webmvc`) and Spring Data JPA backed by PostgreSQL (configured on port 5430). Base package is `com.sresthaa`; domain code lives under `com.sresthaa.publicui` with the following implemented layers:
+- **Controllers**: `HeartbeatController`, `BlogController`, `ContactFormController`, `GalleryController`, `ProjectController`
+- **Models**: `Blog`, `ContactForm`, `Gallery`, `Project`
+- **Repositories**: `BlogRepository`, `ContactFormRepository`, `GalleryRepository`, `ProjectRepository`
+- **Services**: `BlogService`, `ContactFormService`, `GalleryService`, `ProjectService`
 
 **Test environment** — UI tests run in jsdom. API tests use Spring Boot test slices (`spring-boot-starter-data-jpa-test`, `spring-boot-starter-webmvc-test`).

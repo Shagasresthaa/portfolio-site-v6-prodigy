@@ -4,3 +4,9 @@
   box-sizing: border-box;
   margin: 0;
 }
+
+@layer base {
+  body {
+    @apply bg-surface text-ink;
+  }
+}
