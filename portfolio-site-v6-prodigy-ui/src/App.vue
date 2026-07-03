@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import BackgroundComponent from './components/BackgroundComponent.vue'
 import NavbarComponent from './components/NavbarComponent.vue'
 import FooterComponent from './components/FooterComponent.vue'
 </script>
@@ -7,7 +8,8 @@ import FooterComponent from './components/FooterComponent.vue'
 <template>
   <div class="flex min-h-screen flex-col">
     <NavbarComponent />
-    <main class="flex w-full flex-1 justify-center">
+    <main class="relative flex w-full flex-1 justify-center">
+      <BackgroundComponent />
       <RouterView />
     </main>
     <FooterComponent />

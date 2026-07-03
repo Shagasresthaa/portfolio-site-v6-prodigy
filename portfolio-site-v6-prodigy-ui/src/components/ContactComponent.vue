@@ -8,7 +8,7 @@
     </div>
 
     <form
-      class="border-ink-muted/20 bg-surface-muted flex flex-col gap-8 rounded-2xl border p-8 shadow-xl"
+      class="border-ink-muted/20 bg-surface-muted/70 font-salsa flex flex-col gap-8 rounded-2xl border p-8 shadow-xl backdrop-blur-md"
       @submit.prevent="handleSubmit"
     >
       <label class="flex items-center gap-2 text-base">
@@ -23,15 +23,16 @@
       <div v-if="!postAnonymously">
         <label class="mb-2 flex items-center gap-2 text-base font-semibold" for="name">
           <FontAwesomeIcon :icon="faUser" class="size-4" aria-hidden="true" />
-          Name (Optional)
+          Name *
         </label>
         <input
           id="name"
           v-model="form.name"
           type="text"
+          required
           maxlength="100"
           placeholder="Your name"
-          class="border-ink-muted/30 bg-surface focus:border-(--color-primary) w-full rounded border p-3 text-base placeholder:text-ink-muted/70 focus:outline-none"
+          class="border-ink-muted/30 bg-surface focus:border-(--color-primary) font-salsa w-full rounded border p-3 text-base placeholder:text-ink-muted/70 focus:outline-none"
         />
       </div>
 
@@ -48,26 +49,32 @@
           maxlength="254"
           placeholder="your@email.com"
           :class="emailError ? 'border-danger' : 'border-ink-muted/30 focus:border-(--color-primary)'"
-          class="bg-surface w-full rounded border p-3 text-base placeholder:text-ink-muted/70 focus:outline-none"
+          class="bg-surface font-salsa w-full rounded border p-3 text-base placeholder:text-ink-muted/70 focus:outline-none"
           @input="emailError = null"
         />
         <p v-if="emailError" class="text-danger mt-1 text-sm">{{ emailError }}</p>
       </div>
 
       <div>
-        <label class="mb-2 block text-base font-semibold" for="subject">Subject (Optional)</label>
+        <label class="mb-2 flex items-center gap-2 text-base font-semibold" for="subject">
+          <FontAwesomeIcon :icon="faTag" class="size-4" aria-hidden="true" />
+          Subject (Optional)
+        </label>
         <input
           id="subject"
           v-model="form.subject"
           type="text"
           maxlength="150"
           placeholder="What's this about?"
-          class="border-ink-muted/30 bg-surface focus:border-(--color-primary) w-full rounded border p-3 text-base placeholder:text-ink-muted/70 focus:outline-none"
+          class="border-ink-muted/30 bg-surface focus:border-(--color-primary) font-salsa w-full rounded border p-3 text-base placeholder:text-ink-muted/70 focus:outline-none"
         />
       </div>
 
       <div>
-        <label class="mb-2 block text-base font-semibold" for="message">Message *</label>
+        <label class="mb-2 flex items-center gap-2 text-base font-semibold" for="message">
+          <FontAwesomeIcon :icon="faMessage" class="size-4" aria-hidden="true" />
+          Message *
+        </label>
         <textarea
           id="message"
           v-model="form.message"
@@ -75,13 +82,13 @@
           rows="8"
           maxlength="5000"
           placeholder="Your message..."
-          class="border-ink-muted/30 bg-surface focus:border-(--color-primary) w-full rounded border p-3 text-base placeholder:text-ink-muted/70 focus:outline-none"
+          class="border-ink-muted/30 bg-surface focus:border-(--color-primary) font-salsa w-full rounded border p-3 text-base placeholder:text-ink-muted/70 focus:outline-none"
         />
       </div>
 
       <button
         type="submit"
-        class="bg-secondary text-secondary-contrast group flex w-full items-center justify-center gap-2 rounded-lg px-8 py-3 transition hover:opacity-90"
+        class="bg-secondary text-secondary-contrast font-salsa group flex w-full items-center justify-center gap-2 rounded-lg px-8 py-3 transition hover:opacity-90"
       >
         <FontAwesomeIcon
           :icon="faPaperPlane"
@@ -101,7 +108,13 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faEnvelope, faPaperPlane, faUser } from '@fortawesome/free-solid-svg-icons'
+import {
+  faEnvelope,
+  faMessage,
+  faPaperPlane,
+  faTag,
+  faUser,
+} from '@fortawesome/free-solid-svg-icons'
 
 // Practical RFC 5322-ish email pattern (not the full spec, but rejects obvious garbage).
 const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+$/
