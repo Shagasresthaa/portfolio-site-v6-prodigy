@@ -13,7 +13,7 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
-// Apply the persisted/system theme before mount to avoid a flash of the wrong theme.
+// Apply the persisted theme (defaulting to light) before mount to avoid a flash of the wrong theme.
 useThemeStore(pinia)
 
 app.mount('#app')

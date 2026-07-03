@@ -2,15 +2,10 @@
   <Disclosure
     as="nav"
     v-slot="{ open }"
-    class="font-salsa sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-gray-900/80"
+    class="font-salsa border-ink-muted/20 bg-surface/80 sticky top-0 z-50 w-full border-b backdrop-blur-md"
   >
     <div class="flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
-      <RouterLink
-        to="/"
-        class="text-lg tracking-tight text-gray-900 dark:text-white"
-      >
-        {{ route.meta.title }}
-      </RouterLink>
+      <RouterLink to="/" class="text-ink text-lg tracking-tight"> {{ route.meta.title }} </RouterLink>
 
       <div class="flex items-center gap-4">
         <div
@@ -18,7 +13,7 @@
           @mouseleave="hoverIndex = null"
         >
           <span
-            class="pointer-events-none absolute top-0 left-0 h-full rounded-full bg-gray-900 transition-[transform,width] duration-300 ease-out dark:bg-white"
+            class="bg-ink pointer-events-none absolute top-0 left-0 h-full rounded-full transition-[transform,width] duration-300 ease-out"
             :style="indicatorStyle"
           />
           <RouterLink
@@ -27,9 +22,7 @@
             :ref="(el) => setItemRef(el, index)"
             :to="item.href"
             :class="[
-              highlightIndex === index
-                ? 'text-white dark:text-gray-900'
-                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
+              highlightIndex === index ? 'text-surface' : 'text-ink-muted hover:text-ink',
               'relative z-10 flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors',
             ]"
             :aria-current="isCurrent(item) ? 'page' : undefined"
@@ -43,7 +36,7 @@
         <div class="flex items-center gap-1">
           <button
             type="button"
-            class="relative rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-900/5 hover:text-gray-900 focus-visible:bg-gray-900/5 focus-visible:text-gray-900 focus-visible:outline-none dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:bg-white/10 dark:focus-visible:text-white"
+            class="text-ink-muted hover:bg-ink/5 hover:text-ink focus-visible:bg-ink/5 focus-visible:text-ink relative rounded-full p-2 transition-colors focus-visible:outline-none"
             @click="themeStore.toggleTheme()"
           >
             <span class="sr-only">Toggle theme</span>
@@ -52,7 +45,7 @@
           </button>
 
           <DisclosureButton
-            class="relative rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-900/5 hover:text-gray-900 focus-visible:bg-gray-900/5 focus-visible:text-gray-900 focus-visible:outline-none md:hidden dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:bg-white/10 dark:focus-visible:text-white"
+            class="text-ink-muted hover:bg-ink/5 hover:text-ink focus-visible:bg-ink/5 focus-visible:text-ink relative rounded-full p-2 transition-colors focus-visible:outline-none md:hidden"
           >
             <span class="sr-only">Open main menu</span>
             <Bars3Icon v-if="!open" class="size-6" aria-hidden="true" />
@@ -63,16 +56,14 @@
     </div>
 
     <DisclosurePanel class="md:hidden">
-      <div class="space-y-1 border-t border-gray-200 px-4 pt-2 pb-3 dark:border-white/10">
+      <div class="border-ink-muted/20 space-y-1 border-t px-4 pt-2 pb-3">
         <DisclosureButton
           v-for="item in navigation"
           :key="item.name"
           :as="RouterLink"
           :to="item.href"
           :class="[
-            isCurrent(item)
-              ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-              : 'text-gray-600 hover:bg-gray-900/5 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white',
+            isCurrent(item) ? 'bg-ink text-surface' : 'text-ink-muted hover:bg-ink/5 hover:text-ink',
             'flex items-center gap-2 rounded-lg px-3 py-2 text-base font-medium transition-colors',
           ]"
           :aria-current="isCurrent(item) ? 'page' : undefined"
