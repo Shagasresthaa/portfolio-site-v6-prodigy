@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Salsa&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap');
 @import './base.css';
 @import 'tailwindcss';
 
@@ -9,6 +12,16 @@
  * Red reserved strictly for danger/destructive states.
  */
 @theme {
+  /*
+   * Fonts carried over from the old portfolio: Geist as the base sans
+   * font, Salsa for short accents/headings, Kalam for body copy.
+   */
+  --font-sans:
+    'Geist', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-salsa: 'Salsa', cursive;
+  --font-kalam: 'Kalam', cursive;
+
   --color-surface: #fafafa; /* neutral-50 */
   --color-surface-muted: #f5f5f5; /* neutral-100 */
   --color-ink: #262626; /* neutral-800 */

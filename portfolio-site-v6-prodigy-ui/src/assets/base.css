@@ -7,6 +7,6 @@
 
 @layer base {
   body {
-    @apply bg-surface text-ink;
+    @apply bg-surface text-ink font-sans;
   }
 }

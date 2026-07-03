@@ -2,12 +2,12 @@
   <Disclosure
     as="nav"
     v-slot="{ open }"
-    class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-gray-900/80"
+    class="font-salsa sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-gray-900/80"
   >
     <div class="flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
       <RouterLink
         to="/"
-        class="text-lg font-semibold tracking-tight text-gray-900 dark:text-white"
+        class="text-lg tracking-tight text-gray-900 dark:text-white"
       >
         {{ route.meta.title }}
       </RouterLink>
@@ -21,11 +21,11 @@
             class="pointer-events-none absolute top-0 left-0 h-full rounded-full bg-gray-900 transition-[transform,width] duration-300 ease-out dark:bg-white"
             :style="indicatorStyle"
           />
-          <a
+          <RouterLink
             v-for="(item, index) in navigation"
             :key="item.name"
             :ref="(el) => setItemRef(el, index)"
-            :href="item.href"
+            :to="item.href"
             :class="[
               highlightIndex === index
                 ? 'text-white dark:text-gray-900'
@@ -37,7 +37,7 @@
           >
             <FontAwesomeIcon :icon="item.icon" class="size-4" aria-hidden="true" />
             <span>{{ item.name }}</span>
-          </a>
+          </RouterLink>
         </div>
 
         <div class="flex items-center gap-1">
@@ -67,8 +67,8 @@
         <DisclosureButton
           v-for="item in navigation"
           :key="item.name"
-          as="a"
-          :href="item.href"
+          :as="RouterLink"
+          :to="item.href"
           :class="[
             isCurrent(item)
               ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
@@ -86,7 +86,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import {
+  type ComponentPublicInstance,
+  computed,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+} from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import { Bars3Icon, MoonIcon, SunIcon, XMarkIcon } from '@heroicons/vue/24/outline'
@@ -105,10 +113,10 @@ const route = useRoute()
 
 const navigation = [
   { name: 'Home', href: '/', icon: faHouse },
-  { name: 'Projects', href: '#', icon: faFolderOpen },
-  { name: 'Blog', href: '#', icon: faPenNib },
-  { name: 'Highlights', href: '#', icon: faStar },
-  { name: 'Contact', href: '#', icon: faEnvelope },
+  { name: 'Projects', href: '/projects', icon: faFolderOpen },
+  { name: 'Blog', href: '/blog', icon: faPenNib },
+  { name: 'Highlights', href: '/highlights', icon: faStar },
+  { name: 'Contact', href: '/contact', icon: faEnvelope },
 ]
 
 function isCurrent(item: (typeof navigation)[number]) {
@@ -117,8 +125,8 @@ function isCurrent(item: (typeof navigation)[number]) {
 
 const itemEls = ref<(HTMLElement | null)[]>([])
 
-function setItemRef(el: Element | { $el: Element } | null, index: number) {
-  itemEls.value[index] = (el as HTMLElement | null) ?? null
+function setItemRef(el: Element | ComponentPublicInstance | null, index: number) {
+  itemEls.value[index] = el === null ? null : (('$el' in el ? el.$el : el) as HTMLElement)
 }
 
 const hoverIndex = ref<number | null>(null)
