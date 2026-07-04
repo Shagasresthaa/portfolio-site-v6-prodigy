@@ -1,7 +1,399 @@
-<script setup lang="ts"></script>
-
 <template>
-  <div>Highlights</div>
+  <div class="mx-auto w-full max-w-6xl px-4 py-12">
+    <div class="mb-12 text-center">
+      <h1 class="font-salsa text-primary mb-3 text-4xl font-bold md:text-5xl">Highlights</h1>
+      <p class="font-kalam text-ink-muted text-lg md:text-xl">
+        A collection of highlights, demos, and achievements
+      </p>
+    </div>
+
+    <template v-if="highlightsContent">
+      <!-- Tag filter -->
+      <div class="mb-8 flex flex-wrap items-center gap-2">
+        <Popover v-slot="{ close }" class="relative">
+          <PopoverButton
+            class="bg-ink/5 hover:bg-ink/10 text-ink font-salsa flex items-center gap-2 rounded-lg px-4 py-2 backdrop-blur-md transition-colors"
+            @click="pendingTags = [...appliedTags]"
+          >
+            <FontAwesomeIcon :icon="faFilter" class="size-4" aria-hidden="true" />
+            Filter by Tags
+            <span
+              v-if="appliedTags.length > 0"
+              class="bg-primary text-primary-contrast rounded-full px-2 py-0.5 text-xs"
+            >
+              {{ appliedTags.length }}
+            </span>
+          </PopoverButton>
+
+          <PopoverPanel
+            class="border-ink-muted/20 bg-surface font-salsa absolute top-full left-0 z-50 mt-2 w-80 rounded-2xl border shadow-xl backdrop-blur-md"
+          >
+            <div class="border-ink-muted/20 flex items-center justify-between border-b px-4 py-3">
+              <span class="text-sm font-semibold">Select Tags</span>
+              <PopoverButton class="text-ink-muted hover:text-ink transition-colors" aria-label="Close">
+                <FontAwesomeIcon :icon="faXmark" class="size-4" aria-hidden="true" />
+              </PopoverButton>
+            </div>
+
+            <div v-if="pendingTags.length > 0" class="border-ink-muted/20 border-b p-3">
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="tag in pendingTags"
+                  :key="tag"
+                  class="bg-primary/20 text-primary flex items-center gap-1 rounded-full px-3 py-1 text-xs"
+                >
+                  {{ tag }}
+                  <button
+                    type="button"
+                    class="hover:text-danger"
+                    :aria-label="`Remove ${tag}`"
+                    @click="togglePendingTag(tag)"
+                  >
+                    <FontAwesomeIcon :icon="faXmark" class="size-3" aria-hidden="true" />
+                  </button>
+                </span>
+              </div>
+            </div>
+
+            <div class="border-ink-muted/20 border-b p-3">
+              <div class="relative">
+                <FontAwesomeIcon
+                  :icon="faMagnifyingGlass"
+                  class="text-ink-muted/70 absolute top-1/2 left-3 -translate-y-1/2 text-sm"
+                  aria-hidden="true"
+                />
+                <input
+                  v-model="tagSearch"
+                  type="text"
+                  placeholder="Search tags..."
+                  class="border-ink-muted/30 bg-surface focus:border-(--color-primary) w-full rounded-lg border py-2 pr-3 pl-9 text-sm focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div class="max-h-48 overflow-y-auto p-2">
+              <button
+                v-for="tag in filteredAvailableTags"
+                :key="tag"
+                type="button"
+                class="hover:bg-ink/5 w-full rounded-lg px-4 py-2 text-left text-sm transition-colors"
+                @click="togglePendingTag(tag)"
+              >
+                {{ tag }}
+              </button>
+              <p v-if="filteredAvailableTags.length === 0" class="text-ink-muted py-4 text-center text-sm">
+                {{ pendingTags.length > 0 ? 'All tags selected' : 'No tags found' }}
+              </p>
+            </div>
+
+            <div class="border-ink-muted/20 space-y-2 border-t p-3">
+              <button
+                type="button"
+                class="bg-secondary text-secondary-contrast w-full rounded-lg px-4 py-2 text-sm transition hover:opacity-90"
+                @click="applyTagFilter(close)"
+              >
+                Apply Filters<template v-if="pendingTags.length > 0"> ({{ pendingTags.length }})</template>
+              </button>
+              <button
+                v-if="pendingTags.length > 0"
+                type="button"
+                class="bg-ink/5 text-ink-muted hover:bg-ink/10 w-full rounded-lg px-4 py-2 text-sm transition-colors"
+                @click="pendingTags = []"
+              >
+                Clear Selection
+              </button>
+            </div>
+          </PopoverPanel>
+        </Popover>
+
+        <span
+          v-for="tag in appliedTags"
+          :key="tag"
+          class="bg-primary/20 text-primary font-salsa flex items-center gap-2 rounded-full px-3 py-1 text-sm"
+        >
+          {{ tag }}
+          <button
+            type="button"
+            class="hover:text-danger"
+            :aria-label="`Remove ${tag}`"
+            @click="removeAppliedTag(tag)"
+          >
+            <FontAwesomeIcon :icon="faXmark" class="size-3" aria-hidden="true" />
+          </button>
+        </span>
+      </div>
+
+      <!-- Grid -->
+      <!-- items-start (not stretch) + a JS-measured cardMinHeight (floor, not a live
+      stretch) gets the best of both: cards read as a uniform grid, but expanding one
+      card's description can still grow past that floor without forcing its row-mates
+      to grow too - see recalcCardMinHeight, which only reruns on a new set of cards
+      (page/filter change) or resize, never on a card's own expand/collapse. -->
+      <div v-if="pagedItems.length > 0" class="grid grid-cols-1 items-start gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <HighlightCard
+          v-for="item in pagedItems"
+          :key="item.id"
+          :ref="(el) => setCardRef(item.id, el)"
+          :item="item"
+          :style="cardMinHeight > 0 ? { minHeight: `${cardMinHeight}px` } : undefined"
+          @view="openModal(item)"
+        />
+      </div>
+      <div
+        v-else
+        class="border-ink-muted/30 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12"
+      >
+        <p class="font-kalam text-ink-muted text-lg">
+          {{ appliedTags.length > 0 ? 'No highlights found with selected tags' : 'No highlights yet' }}
+        </p>
+        <button
+          v-if="appliedTags.length > 0"
+          type="button"
+          class="text-primary font-salsa mt-4 hover:opacity-80"
+          @click="appliedTags = []"
+        >
+          Clear filters
+        </button>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="font-salsa mt-12 flex items-center justify-center gap-4">
+        <button
+          type="button"
+          class="bg-ink/5 hover:bg-ink/10 text-ink flex items-center gap-2 rounded-lg px-4 py-2 backdrop-blur-md transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="page === 1"
+          @click="page = Math.max(1, page - 1)"
+        >
+          <FontAwesomeIcon :icon="faChevronLeft" class="size-3" aria-hidden="true" />
+          Previous
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button
+            v-for="pageNum in totalPages"
+            :key="pageNum"
+            type="button"
+            class="size-10 rounded-lg transition-colors"
+            :class="page === pageNum ? 'bg-primary text-primary-contrast' : 'bg-ink/5 text-ink-muted hover:bg-ink/10'"
+            @click="page = pageNum"
+          >
+            {{ pageNum }}
+          </button>
+        </div>
+
+        <button
+          type="button"
+          class="bg-ink/5 hover:bg-ink/10 text-ink flex items-center gap-2 rounded-lg px-4 py-2 backdrop-blur-md transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="page === totalPages"
+          @click="page = Math.min(totalPages, page + 1)"
+        >
+          Next
+          <FontAwesomeIcon :icon="faChevronRight" class="size-3" aria-hidden="true" />
+        </button>
+      </div>
+    </template>
+
+    <p v-else class="text-ink-muted text-center">Loading...</p>
+
+    <!-- Image modal - thumbnails in the grid are low-res stand-ins, this shows item.image (the actual/full image) -->
+    <TransitionRoot :show="selectedItem !== null" as="template">
+      <Dialog as="div" class="relative z-50" @close="selectedItem = null">
+        <TransitionChild
+          as="template"
+          enter="duration-200 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-150 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="bg-ink/70 fixed inset-0 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+          <TransitionChild
+            as="template"
+            enter="duration-200 ease-out"
+            enter-from="scale-95 opacity-0"
+            enter-to="scale-100 opacity-100"
+            leave="duration-150 ease-in"
+            leave-from="scale-100 opacity-100"
+            leave-to="scale-95 opacity-0"
+          >
+            <DialogPanel class="bg-surface relative w-full max-w-4xl overflow-hidden rounded-2xl shadow-2xl">
+              <button
+                type="button"
+                class="bg-ink/50 hover:bg-ink/70 text-surface absolute top-4 right-4 z-10 rounded-full p-2 transition-colors"
+                aria-label="Close"
+                @click="selectedItem = null"
+              >
+                <FontAwesomeIcon :icon="faXmark" class="size-5" aria-hidden="true" />
+              </button>
+
+              <img
+                v-if="selectedItem"
+                :src="selectedItem.image"
+                :alt="selectedItem.title"
+                class="max-h-[70vh] w-full object-contain"
+              />
+
+              <div v-if="selectedItem?.caption" class="border-ink-muted/20 bg-surface-muted border-t p-4 text-center">
+                <p class="font-kalam text-ink-muted text-sm italic">"{{ selectedItem.caption }}"</p>
+              </div>
+            </DialogPanel>
+          </TransitionChild>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+  </div>
 </template>
 
-<style scoped></style>
+<script setup lang="ts">
+import { type ComponentPublicInstance, computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import {
+  Dialog,
+  DialogPanel,
+  Popover,
+  PopoverButton,
+  PopoverPanel,
+  TransitionChild,
+  TransitionRoot,
+} from '@headlessui/vue'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { faChevronLeft, faChevronRight, faFilter, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { useCachedResource } from '@/composables/useCachedResource'
+import HighlightCard from './HighlightCard.vue'
+import type { HighlightItem } from '@/types/highlight'
+
+interface HighlightsContent {
+  items: HighlightItem[]
+}
+
+const { data: highlightsContent } = useCachedResource<HighlightsContent>(
+  'highlights-content',
+  '/data/highlights.json',
+)
+
+const ITEMS_PER_PAGE = 12
+
+const page = ref(1)
+const appliedTags = ref<string[]>([])
+const pendingTags = ref<string[]>([])
+const tagSearch = ref('')
+const selectedItem = ref<HighlightItem | null>(null)
+
+function parseTags(tags: string): string[] {
+  return tags
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+}
+
+const sortedItems = computed(() => {
+  const items = highlightsContent.value?.items ?? []
+  return [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+})
+
+const allTags = computed(() => {
+  const tagSet = new Set<string>()
+  sortedItems.value.forEach((item) => parseTags(item.tags).forEach((tag) => tagSet.add(tag)))
+  return Array.from(tagSet).sort()
+})
+
+const filteredAvailableTags = computed(() => {
+  const query = tagSearch.value.trim().toLowerCase()
+  return allTags.value.filter(
+    (tag) => !pendingTags.value.includes(tag) && (query === '' || tag.toLowerCase().includes(query)),
+  )
+})
+
+const filteredItems = computed(() => {
+  if (appliedTags.value.length === 0) return sortedItems.value
+  return sortedItems.value.filter((item) => {
+    const itemTags = parseTags(item.tags)
+    return appliedTags.value.every((tag) => itemTags.includes(tag))
+  })
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredItems.value.length / ITEMS_PER_PAGE)))
+
+const pagedItems = computed(() => {
+  const start = (page.value - 1) * ITEMS_PER_PAGE
+  return filteredItems.value.slice(start, start + ITEMS_PER_PAGE)
+})
+
+watch(appliedTags, () => {
+  page.value = 1
+})
+
+// Uniform card height on desktop, as a floor rather than a live stretch: measured
+// once per card set (not per render), so a card expanding its own description can
+// still grow past it without dragging its row-mates along - see recalcCardMinHeight.
+const MOBILE_BREAKPOINT_PX = 768
+const cardMinHeight = ref(0)
+const cardEls = new Map<string, HTMLElement>()
+
+function setCardRef(id: string, el: Element | ComponentPublicInstance | null) {
+  if (el === null) {
+    cardEls.delete(id)
+    return
+  }
+  cardEls.set(id, ('$el' in el ? el.$el : el) as HTMLElement)
+}
+
+async function recalcCardMinHeight() {
+  if (window.innerWidth < MOBILE_BREAKPOINT_PX || cardEls.size === 0) {
+    cardMinHeight.value = 0
+    return
+  }
+  // Reset first so a stale (possibly larger) min-height from a previous card set
+  // doesn't inflate this measurement.
+  cardMinHeight.value = 0
+  await nextTick()
+  let max = 0
+  cardEls.forEach((el) => {
+    max = Math.max(max, el.offsetHeight)
+  })
+  cardMinHeight.value = max
+}
+
+// immediate: true matters here - useCachedResource can resolve synchronously from
+// localStorage (no await before that assignment when the cache is fresh), so
+// pagedItems is sometimes already populated before this watcher is even set up,
+// meaning it would never see a "change" to trigger on without this.
+watch(pagedItems, () => nextTick(recalcCardMinHeight), { immediate: true })
+
+let resizeTimeoutId: ReturnType<typeof setTimeout> | undefined
+function handleResize() {
+  if (resizeTimeoutId !== undefined) clearTimeout(resizeTimeoutId)
+  resizeTimeoutId = setTimeout(recalcCardMinHeight, 150)
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  if (resizeTimeoutId !== undefined) clearTimeout(resizeTimeoutId)
+})
+
+function togglePendingTag(tag: string) {
+  const index = pendingTags.value.indexOf(tag)
+  if (index === -1) pendingTags.value.push(tag)
+  else pendingTags.value.splice(index, 1)
+}
+
+function removeAppliedTag(tag: string) {
+  appliedTags.value = appliedTags.value.filter((t) => t !== tag)
+}
+
+function applyTagFilter(close: () => void) {
+  appliedTags.value = [...pendingTags.value]
+  close()
+}
+
+function openModal(item: HighlightItem) {
+  selectedItem.value = item
+}
+</script>

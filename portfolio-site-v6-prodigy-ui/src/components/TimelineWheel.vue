@@ -50,19 +50,45 @@
       </button>
     </div>
 
-    <div class="hidden text-center md:block">
-      <p class="font-kalam text-ink-muted text-sm">{{ active.date }}</p>
-      <h3 class="font-salsa text-primary mb-2 text-2xl font-bold md:text-3xl">
-        {{ active.title }}
-      </h3>
-      <p class="font-kalam font-semibold">{{ active.position }}</p>
-      <p class="font-kalam text-ink-muted">{{ active.institution }}</p>
-      <p v-if="active.duration" class="text-ink-muted mt-1 text-sm">{{ active.duration }}</p>
-    </div>
+    <!-- Cross-fades on activeIndex change instead of snapping straight to the new
+    event's text - out-in so the old text fully clears before the new one appears,
+    rather than two different-length blocks overlapping mid-transition. -->
+    <Transition
+      mode="out-in"
+      enter-active-class="transition-opacity duration-200"
+      leave-active-class="transition-opacity duration-200"
+      enter-from-class="opacity-0"
+      leave-to-class="opacity-0"
+    >
+      <div :key="activeIndex" class="hidden text-center md:block">
+        <p class="font-kalam text-ink-muted text-sm">{{ active.date }}</p>
+        <h3 class="font-salsa text-primary mb-2 text-2xl font-bold md:text-3xl">
+          {{ active.title }}
+        </h3>
+        <p class="font-kalam font-semibold">{{ active.position }}</p>
+        <p class="font-kalam text-ink-muted">{{ active.institution }}</p>
+        <p v-if="active.duration" class="text-ink-muted mt-1 text-sm">{{ active.duration }}</p>
+      </div>
+    </Transition>
 
-    <!-- Mobile/tablet fallback: a rotating arc doesn't translate to narrow viewports -->
-    <div class="mt-8 space-y-6 md:hidden">
-      <div v-for="event in events" :key="event.title" class="bg-surface-muted rounded-lg p-6 shadow-xl">
+    <!-- Mobile/tablet fallback: a rotating arc doesn't translate to narrow viewports, so
+    events scroll horizontally instead of stacking vertically - stacking all of them made
+    the About section extremely long. Auto-scrolls continuously like the desktop arc's
+    auto-rotate, pausing while the user's finger/pointer is down so they can swipe through
+    manually. The list is rendered twice back-to-back so the loop is seamless: once the
+    scroll position passes one full set, it jumps back by that width - invisible since the
+    next set is an identical duplicate. -->
+    <div
+      ref="scrollerRef"
+      class="[scrollbar-width:none] [&::-webkit-scrollbar]:hidden mt-8 flex gap-6 overflow-x-auto px-[7.5%] md:hidden"
+      @pointerdown="startMobileScrollInteraction"
+      @scrollend="endMobileScrollInteraction"
+    >
+      <div
+        v-for="(event, i) in loopedEvents"
+        :key="`${event.title}-${i}`"
+        class="bg-surface-muted/75 w-[85%] shrink-0 rounded-lg p-6 shadow-xl sm:w-80"
+      >
         <h3 class="font-salsa text-primary mb-2 text-xl font-bold">{{ event.title }}</h3>
         <p class="font-kalam mb-1 text-lg font-semibold">{{ event.position }}</p>
         <p class="font-kalam text-ink-muted mb-2 text-base">{{ event.institution }}</p>
@@ -114,6 +140,8 @@ const MAGNIFY_RANGE = 20
 const MAX_SCALE = 1.35
 const ROTATION_SPEED_DEG_PER_SEC = 6
 const HOVER_EASE = 0.08
+// How fast the mobile horizontal scroller drifts, in px/sec.
+const MOBILE_AUTO_SCROLL_SPEED_PX_PER_SEC = 40
 
 // Use the end year for a range ("Dec, 2021 - Nov, 2023" -> 2023), or the only
 // year when there's no range ("Jan, 2024" -> 2024, "Mar, 2025 - Present" -> 2025).
@@ -124,6 +152,9 @@ function extractYear(date: string): string {
 
 // Oldest first, so the arc reads chronologically as it rotates.
 const chronological = computed(() => [...props.events].reverse())
+
+// Duplicated so the mobile scroller can loop seamlessly - see template comment.
+const loopedEvents = computed(() => [...props.events, ...props.events])
 
 function normalizeAngle(deg: number): number {
   let a = deg % 360
@@ -204,6 +235,37 @@ function startDrag(event: PointerEvent) {
   window.addEventListener('pointerup', stopDrag)
 }
 
+const scrollerRef = ref<HTMLElement | null>(null)
+const isMobileScrollInteracting = ref(false)
+
+// Tracked ourselves rather than read back from `scroller.scrollLeft` each frame -
+// some browsers round scrollLeft to the nearest integer on read/write, and at 40px/sec
+// each frame only advances it by a fraction of a pixel, which gets truncated back to
+// the same integer forever if we rely on the DOM property as the accumulator.
+let mobileScrollPosition = 0
+
+// Fallback only - resuming should normally happen via the container's native
+// `scrollend` event instead (see below). Resuming on pointerup fires too early:
+// a swipe's momentum/deceleration keeps moving scrollLeft well after the finger
+// lifts, and immediately overriding it with our own scrollLeft assignment cancels
+// that momentum, which read as "autoscroll ignores my swipes".
+const INTERACTION_TIMEOUT_MS = 3000
+let interactionTimeoutId: ReturnType<typeof setTimeout> | undefined
+
+function endMobileScrollInteraction() {
+  isMobileScrollInteracting.value = false
+  if (interactionTimeoutId !== undefined) {
+    clearTimeout(interactionTimeoutId)
+    interactionTimeoutId = undefined
+  }
+}
+
+function startMobileScrollInteraction() {
+  isMobileScrollInteracting.value = true
+  if (interactionTimeoutId !== undefined) clearTimeout(interactionTimeoutId)
+  interactionTimeoutId = setTimeout(endMobileScrollInteraction, INTERACTION_TIMEOUT_MS)
+}
+
 let rafId: number | undefined
 let lastTime: number | undefined
 
@@ -222,6 +284,23 @@ function tick(time: number) {
     rotation.value -= ROTATION_SPEED_DEG_PER_SEC * deltaSeconds
   }
 
+  // clientWidth is 0 while the element is `display:none` (i.e. md+ viewports),
+  // so this is a no-op on desktop rather than scrolling a hidden element.
+  const scroller = scrollerRef.value
+  if (scroller && scroller.clientWidth > 0) {
+    if (isMobileScrollInteracting.value) {
+      // Keep our tracked position in sync with the user's manual scroll so
+      // autoscroll resumes from wherever they left it, with no visible jump.
+      mobileScrollPosition = scroller.scrollLeft
+    } else {
+      const loopWidth = scroller.scrollWidth / 2
+      if (loopWidth > 0) {
+        mobileScrollPosition = (mobileScrollPosition + MOBILE_AUTO_SCROLL_SPEED_PX_PER_SEC * deltaSeconds) % loopWidth
+        scroller.scrollLeft = mobileScrollPosition
+      }
+    }
+  }
+
   rafId = requestAnimationFrame(tick)
 }
 
@@ -231,6 +310,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (rafId !== undefined) cancelAnimationFrame(rafId)
+  if (interactionTimeoutId !== undefined) clearTimeout(interactionTimeoutId)
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerup', stopDrag)
 })
