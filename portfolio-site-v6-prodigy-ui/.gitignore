@@ -43,3 +43,6 @@ __screenshots__/
 .env.*
 !.env.example
 !.env.*.example
+
+# Simulated/mock content data (stand-in for the real API, not meant to be tracked)
+public/data/*.json
