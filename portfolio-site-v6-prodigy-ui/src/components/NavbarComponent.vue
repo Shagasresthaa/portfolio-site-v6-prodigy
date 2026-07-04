@@ -5,7 +5,9 @@
     class="font-salsa border-ink-muted/20 bg-surface/80 sticky top-0 z-50 w-full border-b backdrop-blur-md"
   >
     <div class="flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
-      <RouterLink to="/" class="text-ink text-lg tracking-tight"> {{ route.meta.title }} </RouterLink>
+      <RouterLink :to="route.path" class="text-ink text-lg tracking-tight">
+        {{ route.meta.title }}
+      </RouterLink>
 
       <div class="flex items-center gap-4">
         <div
@@ -111,7 +113,9 @@ const navigation = [
 ]
 
 function isCurrent(item: (typeof navigation)[number]) {
-  return item.href === route.path
+  // startsWith too, not just exact match - so nested routes (e.g. /blog/:slug)
+  // still highlight their parent nav item (/blog) instead of showing nothing.
+  return route.path === item.href || route.path.startsWith(`${item.href}/`)
 }
 
 const itemEls = ref<(HTMLElement | null)[]>([])

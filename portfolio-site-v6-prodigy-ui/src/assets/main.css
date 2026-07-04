@@ -3,6 +3,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap');
 @import './base.css';
 @import 'tailwindcss';
+@plugin '@tailwindcss/typography';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -61,4 +62,44 @@
 
   --color-danger: #ef4444; /* red-500 */
   --color-danger-soft: rgb(239 68 68 / 15%);
+}
+
+/*
+ * Rebinds @tailwindcss/typography's ".prose"/".prose-invert" palette onto our
+ * own semantic tokens instead of its default gray/blue one, so blog post
+ * content (rendered markdown, see BlogPostComponent.vue) stays consistent
+ * with the rest of the app. Both sets point at the same --color-* var()s
+ * rather than needing separate light/dark values here - .dark already swaps
+ * those above, so "dark:prose-invert" falls out for free.
+ */
+:root {
+  --tw-prose-body: var(--color-ink);
+  --tw-prose-headings: var(--color-ink);
+  --tw-prose-lead: var(--color-ink-muted);
+  --tw-prose-links: var(--color-primary);
+  --tw-prose-bold: var(--color-ink);
+  --tw-prose-counters: var(--color-ink-muted);
+  --tw-prose-bullets: var(--color-ink-muted);
+  --tw-prose-hr: var(--color-ink-muted);
+  --tw-prose-quotes: var(--color-ink);
+  --tw-prose-quote-borders: var(--color-primary);
+  --tw-prose-captions: var(--color-ink-muted);
+  --tw-prose-code: var(--color-ink);
+  --tw-prose-th-borders: var(--color-ink-muted);
+  --tw-prose-td-borders: var(--color-ink-muted);
+
+  --tw-prose-invert-body: var(--color-ink);
+  --tw-prose-invert-headings: var(--color-ink);
+  --tw-prose-invert-lead: var(--color-ink-muted);
+  --tw-prose-invert-links: var(--color-primary);
+  --tw-prose-invert-bold: var(--color-ink);
+  --tw-prose-invert-counters: var(--color-ink-muted);
+  --tw-prose-invert-bullets: var(--color-ink-muted);
+  --tw-prose-invert-hr: var(--color-ink-muted);
+  --tw-prose-invert-quotes: var(--color-ink);
+  --tw-prose-invert-quote-borders: var(--color-primary);
+  --tw-prose-invert-captions: var(--color-ink-muted);
+  --tw-prose-invert-code: var(--color-ink);
+  --tw-prose-invert-th-borders: var(--color-ink-muted);
+  --tw-prose-invert-td-borders: var(--color-ink-muted);
 }

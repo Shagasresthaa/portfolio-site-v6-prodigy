@@ -10,117 +10,13 @@
     <template v-if="highlightsContent">
       <!-- Tag filter -->
       <div class="mb-8 flex flex-wrap items-center gap-2">
-        <Popover v-slot="{ close }" class="relative">
-          <PopoverButton
-            class="bg-ink/5 hover:bg-ink/10 text-ink font-salsa flex items-center gap-2 rounded-lg px-4 py-2 backdrop-blur-md transition-colors"
-            @click="pendingTags = [...appliedTags]"
-          >
-            <FontAwesomeIcon :icon="faFilter" class="size-4" aria-hidden="true" />
-            Filter by Tags
-            <span
-              v-if="appliedTags.length > 0"
-              class="bg-primary text-primary-contrast rounded-full px-2 py-0.5 text-xs"
-            >
-              {{ appliedTags.length }}
-            </span>
-          </PopoverButton>
-
-          <PopoverPanel
-            class="border-ink-muted/20 bg-surface font-salsa absolute top-full left-0 z-50 mt-2 w-80 rounded-2xl border shadow-xl backdrop-blur-md"
-          >
-            <div class="border-ink-muted/20 flex items-center justify-between border-b px-4 py-3">
-              <span class="text-sm font-semibold">Select Tags</span>
-              <PopoverButton class="text-ink-muted hover:text-ink transition-colors" aria-label="Close">
-                <FontAwesomeIcon :icon="faXmark" class="size-4" aria-hidden="true" />
-              </PopoverButton>
-            </div>
-
-            <div v-if="pendingTags.length > 0" class="border-ink-muted/20 border-b p-3">
-              <div class="flex flex-wrap gap-2">
-                <span
-                  v-for="tag in pendingTags"
-                  :key="tag"
-                  class="bg-primary/20 text-primary flex items-center gap-1 rounded-full px-3 py-1 text-xs"
-                >
-                  {{ tag }}
-                  <button
-                    type="button"
-                    class="hover:text-danger"
-                    :aria-label="`Remove ${tag}`"
-                    @click="togglePendingTag(tag)"
-                  >
-                    <FontAwesomeIcon :icon="faXmark" class="size-3" aria-hidden="true" />
-                  </button>
-                </span>
-              </div>
-            </div>
-
-            <div class="border-ink-muted/20 border-b p-3">
-              <div class="relative">
-                <FontAwesomeIcon
-                  :icon="faMagnifyingGlass"
-                  class="text-ink-muted/70 absolute top-1/2 left-3 -translate-y-1/2 text-sm"
-                  aria-hidden="true"
-                />
-                <input
-                  v-model="tagSearch"
-                  type="text"
-                  placeholder="Search tags..."
-                  class="border-ink-muted/30 bg-surface focus:border-(--color-primary) w-full rounded-lg border py-2 pr-3 pl-9 text-sm focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div class="max-h-48 overflow-y-auto p-2">
-              <button
-                v-for="tag in filteredAvailableTags"
-                :key="tag"
-                type="button"
-                class="hover:bg-ink/5 w-full rounded-lg px-4 py-2 text-left text-sm transition-colors"
-                @click="togglePendingTag(tag)"
-              >
-                {{ tag }}
-              </button>
-              <p v-if="filteredAvailableTags.length === 0" class="text-ink-muted py-4 text-center text-sm">
-                {{ pendingTags.length > 0 ? 'All tags selected' : 'No tags found' }}
-              </p>
-            </div>
-
-            <div class="border-ink-muted/20 space-y-2 border-t p-3">
-              <button
-                type="button"
-                class="bg-secondary text-secondary-contrast w-full rounded-lg px-4 py-2 text-sm transition hover:opacity-90"
-                @click="applyTagFilter(close)"
-              >
-                Apply Filters<template v-if="pendingTags.length > 0"> ({{ pendingTags.length }})</template>
-              </button>
-              <button
-                v-if="pendingTags.length > 0"
-                type="button"
-                class="bg-ink/5 text-ink-muted hover:bg-ink/10 w-full rounded-lg px-4 py-2 text-sm transition-colors"
-                @click="pendingTags = []"
-              >
-                Clear Selection
-              </button>
-            </div>
-          </PopoverPanel>
-        </Popover>
-
-        <span
-          v-for="tag in appliedTags"
-          :key="tag"
-          class="bg-primary/20 text-primary font-salsa flex items-center gap-2 rounded-full px-3 py-1 text-sm"
-        >
-          {{ tag }}
-          <button
-            type="button"
-            class="hover:text-danger"
-            :aria-label="`Remove ${tag}`"
-            @click="removeAppliedTag(tag)"
-          >
-            <FontAwesomeIcon :icon="faXmark" class="size-3" aria-hidden="true" />
-          </button>
-        </span>
+        <TagFilterPopover
+          v-model="appliedTags"
+          :all-values="allTags"
+          label="Filter by Tags"
+          panel-title="Select Tags"
+          search-placeholder="Search tags..."
+        />
       </div>
 
       <!-- Grid -->
@@ -249,20 +145,14 @@
 </template>
 
 <script setup lang="ts">
-import { type ComponentPublicInstance, computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import {
-  Dialog,
-  DialogPanel,
-  Popover,
-  PopoverButton,
-  PopoverPanel,
-  TransitionChild,
-  TransitionRoot,
-} from '@headlessui/vue'
+import { computed, ref, watch } from 'vue'
+import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faChevronLeft, faChevronRight, faFilter, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faChevronLeft, faChevronRight, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useCachedResource } from '@/composables/useCachedResource'
+import { useUniformCardHeight } from '@/composables/useUniformCardHeight'
 import HighlightCard from './HighlightCard.vue'
+import TagFilterPopover from './TagFilterPopover.vue'
 import type { HighlightItem } from '@/types/highlight'
 
 interface HighlightsContent {
@@ -278,8 +168,6 @@ const ITEMS_PER_PAGE = 12
 
 const page = ref(1)
 const appliedTags = ref<string[]>([])
-const pendingTags = ref<string[]>([])
-const tagSearch = ref('')
 const selectedItem = ref<HighlightItem | null>(null)
 
 function parseTags(tags: string): string[] {
@@ -298,13 +186,6 @@ const allTags = computed(() => {
   const tagSet = new Set<string>()
   sortedItems.value.forEach((item) => parseTags(item.tags).forEach((tag) => tagSet.add(tag)))
   return Array.from(tagSet).sort()
-})
-
-const filteredAvailableTags = computed(() => {
-  const query = tagSearch.value.trim().toLowerCase()
-  return allTags.value.filter(
-    (tag) => !pendingTags.value.includes(tag) && (query === '' || tag.toLowerCase().includes(query)),
-  )
 })
 
 const filteredItems = computed(() => {
@@ -326,72 +207,7 @@ watch(appliedTags, () => {
   page.value = 1
 })
 
-// Uniform card height on desktop, as a floor rather than a live stretch: measured
-// once per card set (not per render), so a card expanding its own description can
-// still grow past it without dragging its row-mates along - see recalcCardMinHeight.
-const MOBILE_BREAKPOINT_PX = 768
-const cardMinHeight = ref(0)
-const cardEls = new Map<string, HTMLElement>()
-
-function setCardRef(id: string, el: Element | ComponentPublicInstance | null) {
-  if (el === null) {
-    cardEls.delete(id)
-    return
-  }
-  cardEls.set(id, ('$el' in el ? el.$el : el) as HTMLElement)
-}
-
-async function recalcCardMinHeight() {
-  if (window.innerWidth < MOBILE_BREAKPOINT_PX || cardEls.size === 0) {
-    cardMinHeight.value = 0
-    return
-  }
-  // Reset first so a stale (possibly larger) min-height from a previous card set
-  // doesn't inflate this measurement.
-  cardMinHeight.value = 0
-  await nextTick()
-  let max = 0
-  cardEls.forEach((el) => {
-    max = Math.max(max, el.offsetHeight)
-  })
-  cardMinHeight.value = max
-}
-
-// immediate: true matters here - useCachedResource can resolve synchronously from
-// localStorage (no await before that assignment when the cache is fresh), so
-// pagedItems is sometimes already populated before this watcher is even set up,
-// meaning it would never see a "change" to trigger on without this.
-watch(pagedItems, () => nextTick(recalcCardMinHeight), { immediate: true })
-
-let resizeTimeoutId: ReturnType<typeof setTimeout> | undefined
-function handleResize() {
-  if (resizeTimeoutId !== undefined) clearTimeout(resizeTimeoutId)
-  resizeTimeoutId = setTimeout(recalcCardMinHeight, 150)
-}
-
-onMounted(() => {
-  window.addEventListener('resize', handleResize)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-  if (resizeTimeoutId !== undefined) clearTimeout(resizeTimeoutId)
-})
-
-function togglePendingTag(tag: string) {
-  const index = pendingTags.value.indexOf(tag)
-  if (index === -1) pendingTags.value.push(tag)
-  else pendingTags.value.splice(index, 1)
-}
-
-function removeAppliedTag(tag: string) {
-  appliedTags.value = appliedTags.value.filter((t) => t !== tag)
-}
-
-function applyTagFilter(close: () => void) {
-  appliedTags.value = [...pendingTags.value]
-  close()
-}
+const { cardMinHeight, setCardRef } = useUniformCardHeight(() => pagedItems.value)
 
 function openModal(item: HighlightItem) {
   selectedItem.value = item
