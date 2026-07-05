@@ -1,13 +1,14 @@
 # Portfolio Site v6 Prodigy
 
-Personal portfolio website — version 6. Built as a monorepo with a Vue 3 frontend and a Spring Boot REST API backed by PostgreSQL.
+Personal portfolio website — version 6. Built as a monorepo with a Vue 3 frontend, a Spring Boot REST API backed by PostgreSQL, and an Astro-based admin panel.
 
 ## Repository Structure
 
 ```
 portfolio-site-v6-prodigy/
-├── portfolio-site-v6-prodigy-ui/   # Vue 3 frontend
-└── portfolio-site-v6-prodigy-api/  # Spring Boot API
+├── portfolio-site-v6-prodigy-ui/     # Vue 3 frontend
+├── portfolio-site-v6-prodigy-api/    # Spring Boot API
+└── portfolio-site-v6-prodigy-admin/  # Astro admin panel
 ```
 
 ---
@@ -52,4 +53,29 @@ cd portfolio-site-v6-prodigy-api
 ./gradlew bootRun   # start the API server
 ./gradlew test      # run tests
 ./gradlew build     # compile, test, and package
+```
+
+---
+
+## Admin (`portfolio-site-v6-prodigy-admin`)
+
+**Stack:** Astro
+
+Currently just the stock Astro starter — no admin functionality built yet.
+
+### Setup
+
+Requires Node `>=22.12.0` and `npm`.
+
+```bash
+cd portfolio-site-v6-prodigy-admin
+npm install
+```
+
+### Development
+
+```bash
+npm run dev       # start dev server with HMR
+npm run build     # production build
+npm run preview   # preview the production build
 ```

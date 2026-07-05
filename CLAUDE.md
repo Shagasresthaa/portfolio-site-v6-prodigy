@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Structure
 
-Monorepo with two independent sub-projects:
+Monorepo with three independent sub-projects:
 
 - `portfolio-site-v6-prodigy-ui/` — Vue 3 frontend (Vite, TypeScript, Pinia, Vue Router, Tailwind CSS 4)
 - `portfolio-site-v6-prodigy-api/` — Spring Boot 4 backend (Java 21, JPA, PostgreSQL)
+- `portfolio-site-v6-prodigy-admin/` — Astro admin panel (currently the unmodified `npm create astro@latest` starter, no pages/content built yet)
 
 ## UI Commands
 
@@ -40,6 +41,21 @@ All commands run from `portfolio-site-v6-prodigy-api/` using the Gradle wrapper.
 ```
 
 Requires Java 21. The app expects a running PostgreSQL instance configured externally.
+
+## Admin Commands
+
+All commands run from `portfolio-site-v6-prodigy-admin/` using `npm` (this sub-project uses `npm`/`package-lock.json`, not `pnpm` like the UI).
+
+```bash
+npm install           # install dependencies
+npm run dev           # dev server with HMR
+npm run build         # production build (outputs to dist/)
+npm run preview       # preview the production build locally
+```
+
+Node engine requirement: `>=22.12.0`.
+
+Has its own `AGENTS.md`/`CLAUDE.md` (identical, both starter-generated) noting that `astro dev` should be started with `--background` and managed via `astro dev stop`/`status`/`logs`.
 
 ## Architecture
 
@@ -114,4 +130,6 @@ Also note: form controls (`input`/`textarea`/`button`) don't reliably inherit th
 
 Because of this, `ContactComponent.vue`'s form submit is currently local-only (resets the form, shows a local success message), and `BlogPostComponent.vue`'s like/dislike and comments are `localStorage`-backed mocks (`useBlogReactions.ts`/`useBlogComments.ts`) — there's no real endpoint to call yet for any of these.
 
-**Test environment** — UI tests run in jsdom. API tests use Spring Boot test slices (`spring-boot-starter-data-jpa-test`, `spring-boot-starter-webmvc-test`).
+**Admin** — Astro 7, chosen for the admin panel over extending the Vue UI as a separate sub-project entirely. Currently just the stock `npm create astro@latest` starter (`src/pages/index.astro`, `src/components/Welcome.astro`, `src/layouts/Layout.astro`) with no real pages, integrations, or content collections added yet — none of the UI's Tailwind config, color tokens, or fonts have been ported over here. Nothing to reuse from the UI sub-project by default since Astro components (`.astro`) are a different format from Vue SFCs, though Astro can mount Vue components via `@astrojs/vue` if that's the intended path for shared UI later.
+
+**Test environment** — UI tests run in jsdom. API tests use Spring Boot test slices (`spring-boot-starter-data-jpa-test`, `spring-boot-starter-webmvc-test`). Admin has no test setup yet.

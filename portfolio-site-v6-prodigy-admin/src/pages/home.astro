@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import NavbarComponent from '../components/NavbarComponent.vue';
+import HomeDashboard from '../components/HomeDashboard.vue';
+---
+
+<Layout title="Admin Home">
+	<NavbarComponent client:load currentPath={Astro.url.pathname} pageTitle="Home" />
+	<HomeDashboard client:load />
+</Layout>
