@@ -6,5 +6,5 @@ import SecurityKeysComponent from '../../components/SecurityKeysComponent.vue';
 
 <Layout title="Security Keys">
 	<NavbarComponent client:load currentPath={Astro.url.pathname} pageTitle="Account" />
-	<SecurityKeysComponent client:load />
+	<SecurityKeysComponent client:only="vue" />
 </Layout>

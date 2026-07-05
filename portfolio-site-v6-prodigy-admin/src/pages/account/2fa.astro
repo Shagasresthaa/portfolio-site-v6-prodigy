@@ -6,5 +6,5 @@ import TwoFactorComponent from '../../components/TwoFactorComponent.vue';
 
 <Layout title="Two-Factor Authentication">
 	<NavbarComponent client:load currentPath={Astro.url.pathname} pageTitle="Account" />
-	<TwoFactorComponent client:load />
+	<TwoFactorComponent client:only="vue" />
 </Layout>

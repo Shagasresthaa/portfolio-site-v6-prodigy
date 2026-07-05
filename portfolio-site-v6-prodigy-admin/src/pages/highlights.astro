@@ -1,14 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import NavbarComponent from '../components/NavbarComponent.vue';
-import PlaceholderPage from '../components/PlaceholderPage.vue';
+import HighlightsManager from '../components/HighlightsManager.vue';
 ---
 
 <Layout title="Admin Highlights">
 	<NavbarComponent client:load currentPath={Astro.url.pathname} pageTitle="Highlights" />
-	<PlaceholderPage
-		client:load
-		title="Highlights"
-		description="Highlights management is coming once the API is ready."
-	/>
+	<HighlightsManager client:only="vue" />
 </Layout>

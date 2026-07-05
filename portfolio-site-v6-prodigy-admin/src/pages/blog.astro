@@ -7,7 +7,7 @@ import PlaceholderPage from '../components/PlaceholderPage.vue';
 <Layout title="Admin Blog">
 	<NavbarComponent client:load currentPath={Astro.url.pathname} pageTitle="Blog" />
 	<PlaceholderPage
-		client:load
+		client:only="vue"
 		title="Blog"
 		description="Blog post management is coming once the API is ready."
 	/>

@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Simulated/mock content data (stand-in for the real API, not meant to be tracked)
+public/data/*.json
