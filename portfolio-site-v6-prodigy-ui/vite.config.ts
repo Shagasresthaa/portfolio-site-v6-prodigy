@@ -11,10 +11,7 @@ interface BlogPostSample {
   published: boolean
   title: string
   excerpt: string
-  metaTitle?: string
-  metaDescription?: string
   coverImage?: string
-  ogImage?: string
 }
 
 function escapeHtml(value: string): string {
@@ -62,9 +59,9 @@ function blogPostMetaDevPlugin(): Plugin {
         const html = await server.transformIndexHtml(req.url!, rawHtml, req.originalUrl)
 
         const origin = `${req.headers['x-forwarded-proto'] ?? 'http'}://${req.headers.host}`
-        const title = post.metaTitle || post.title
-        const description = post.metaDescription || post.excerpt
-        const image = post.ogImage || post.coverImage
+        const title = post.title
+        const description = post.excerpt
+        const image = post.coverImage
         const url = `${origin}/blog/${post.slug}`
 
         const metaTags = [

@@ -1,3 +1,7 @@
+// Mirrors portfolio-site-v6-prodigy-ui's src/types/project.ts - keep in
+// sync, this is the shape ProjectCard.vue/ProjectsComponent.vue there expect
+// from projects.json. Unlike HighlightItem, there's only one image field -
+// no separate thumbnail/full-size distinction for projects.
 export type ProjectStatus = 'PLANNING' | 'IN_PROGRESS' | 'COMPLETED' | 'MAINTAINED' | 'ARCHIVED'
 export type CollabMode = 'SOLO' | 'GROUP'
 export type AffiliationType = 'INDEPENDENT' | 'UNIVERSITY' | 'ORGANIZATION' | 'CLUB'
@@ -20,10 +24,10 @@ export interface Project {
   techStacks: string
   projectUrl?: string
   liveUrl?: string
-  // Showcase media: a screenshot (image) or an embedded demo video
+  // Showcase media: an uploaded/converted image or an embedded demo video
   // (videoUrl, e.g. YouTube) - mirrors HighlightItem's mediaType split.
-  // Missing/undefined is treated as IMAGE for older saved data that
-  // predates this field.
+  // Missing/undefined is treated as IMAGE for older saved data (including
+  // existing admin-overrides localStorage entries) that predates this field.
   mediaType?: ProjectMediaType
   image?: string
   videoUrl?: string

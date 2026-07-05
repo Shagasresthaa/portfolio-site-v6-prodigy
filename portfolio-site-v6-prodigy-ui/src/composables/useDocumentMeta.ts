@@ -1,4 +1,4 @@
-import { onUnmounted, watch, type Ref } from 'vue'
+import { watch, type Ref } from 'vue'
 
 export interface DocumentMeta {
   title: string
@@ -7,21 +7,14 @@ export interface DocumentMeta {
   url?: string
 }
 
-const MANAGED_META_ATTR = 'data-managed-meta'
-
-function setMetaTag(attr: 'name' | 'property', key: string, content: string) {
+export function setMetaTag(attr: 'name' | 'property', key: string, content: string) {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`)
   if (!el) {
     el = document.createElement('meta')
     el.setAttribute(attr, key)
-    el.setAttribute(MANAGED_META_ATTR, 'true')
     document.head.appendChild(el)
   }
   el.setAttribute('content', content)
-}
-
-function removeManagedMetaTags() {
-  document.head.querySelectorAll(`[${MANAGED_META_ATTR}]`).forEach((el) => el.remove())
 }
 
 /**
@@ -32,6 +25,12 @@ function removeManagedMetaTags() {
  * HTML and don't execute JS. A real preview needs the backend to serve
  * per-post meta tags in the initial response - deferred until that exists
  * (see CLAUDE.md).
+ *
+ * No unmount cleanup here - router.ts's afterEach unconditionally resets
+ * these same tags to site-wide defaults (from stores/siteSettings.ts) on
+ * every navigation, so leaving this route always restores a sane baseline
+ * without explicit teardown (same reasoning documented there for why the
+ * title itself was never restored on unmount either).
  */
 export function useDocumentMeta(meta: Ref<DocumentMeta | null>) {
   watch(
@@ -55,11 +54,4 @@ export function useDocumentMeta(meta: Ref<DocumentMeta | null>) {
     },
     { immediate: true },
   )
-
-  // Only the injected meta tags need explicit cleanup here - the title doesn't,
-  // since Vue Router's global afterEach guard (see router/index.ts) always runs
-  // *before* the destination route's component mounts, so restoring a
-  // "previous title" here would fire after and stomp back over whatever title
-  // the guard already (correctly) set for wherever navigation is heading next.
-  onUnmounted(removeManagedMetaTags)
 }

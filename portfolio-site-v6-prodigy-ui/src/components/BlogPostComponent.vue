@@ -193,9 +193,9 @@ const renderedContent = computed(() => (post.value ? renderMarkdown(post.value.c
 const documentMeta = computed<DocumentMeta | null>(() => {
   if (!post.value) return null
   return {
-    title: post.value.metaTitle || post.value.title,
-    description: post.value.metaDescription || post.value.excerpt,
-    image: post.value.ogImage || post.value.coverImage,
+    title: post.value.title,
+    description: post.value.excerpt,
+    image: post.value.coverImage,
     url: `${window.location.origin}/blog/${post.value.slug}`,
   }
 })

@@ -10,10 +10,6 @@ export interface BlogPost {
   publishedAt?: string
   // Comma-separated, matching the old site's storage format.
   tags: string
-  // Overrides for link-preview metadata - fall back to title/excerpt/coverImage when absent.
-  metaTitle?: string
-  metaDescription?: string
-  ogImage?: string
   // Baseline counts simulating other visitors - the current browser's own vote
   // (tracked locally, see useBlogReactions) is layered on top of these.
   likeCount: number

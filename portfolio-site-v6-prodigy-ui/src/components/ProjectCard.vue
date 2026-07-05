@@ -2,11 +2,26 @@
   <div
     class="border-ink-muted/20 bg-surface-muted/75 hover:bg-surface-muted group flex flex-col overflow-hidden rounded-2xl border shadow-xl backdrop-blur-md transition-colors duration-300"
   >
-    <div v-if="project.image" class="bg-ink/10 relative h-60 w-full overflow-hidden">
+    <div
+      v-if="project.mediaType !== 'VIDEO' && project.image"
+      class="bg-ink/10 relative h-60 w-full overflow-hidden"
+    >
       <img
         :src="project.image"
         :alt="project.name"
         class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+      />
+    </div>
+    <div
+      v-else-if="project.mediaType === 'VIDEO' && project.videoUrl"
+      class="bg-ink/10 relative h-60 w-full overflow-hidden"
+    >
+      <iframe
+        :src="`https://www.youtube.com/embed/${youTubeId}`"
+        :title="project.name"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+        class="absolute inset-0 h-full w-full"
       />
     </div>
 
@@ -101,10 +116,12 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faArrowUpRightFromSquare, faBuilding, faCalendar, faClock, faLock } from '@fortawesome/free-solid-svg-icons'
 import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import type { AffiliationType, Project, ProjectStatus, SourceCodeAvailability } from '@/types/project'
+import { getYoutubeEmbedId } from '@/utils/youtube'
 
 const props = defineProps<{ project: Project }>()
 
 const isExpanded = ref(false)
+const youTubeId = computed(() => getYoutubeEmbedId(props.project.videoUrl))
 
 const techStacks = computed(() =>
   props.project.techStacks

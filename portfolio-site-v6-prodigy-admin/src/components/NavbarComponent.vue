@@ -92,6 +92,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import {
   faEnvelope,
   faFolderOpen,
+  faGear,
   faHouse,
   faPenNib,
   faStar,
@@ -109,6 +110,7 @@ const navigation = [
   { name: 'Blog', href: '/blog', icon: faPenNib },
   { name: 'Highlights', href: '/highlights', icon: faStar },
   { name: 'Contact', href: '/contact', icon: faEnvelope },
+  { name: 'Settings', href: '/settings', icon: faGear },
   { name: 'Account', href: '/account', icon: faUserGear },
 ]
 

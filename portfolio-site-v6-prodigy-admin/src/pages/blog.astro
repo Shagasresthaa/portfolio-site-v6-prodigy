@@ -1,14 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import NavbarComponent from '../components/NavbarComponent.vue';
-import PlaceholderPage from '../components/PlaceholderPage.vue';
+import BlogManager from '../components/BlogManager.vue';
 ---
 
 <Layout title="Admin Blog">
 	<NavbarComponent client:load currentPath={Astro.url.pathname} pageTitle="Blog" />
-	<PlaceholderPage
-		client:only="vue"
-		title="Blog"
-		description="Blog post management is coming once the API is ready."
-	/>
+	<BlogManager client:only="vue" />
 </Layout>

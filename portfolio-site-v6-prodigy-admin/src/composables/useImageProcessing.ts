@@ -73,3 +73,21 @@ export async function processImageUpload(file: File): Promise<ProcessedImage> {
     bitmap.close()
   }
 }
+
+/**
+ * Same conversion, but for entities with only one image field (Project -
+ * see src/types/project.ts, which has no separate thumbnail) - full-size,
+ * re-encoded as WebP, nothing else.
+ */
+export async function processSingleImageUpload(file: File): Promise<string> {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Please choose an image file.')
+  }
+
+  const bitmap = await createImageBitmap(file)
+  try {
+    return await canvasToWebpDataUrl(resizeToCanvas(bitmap, FULL_MAX_DIMENSION), FULL_QUALITY)
+  } finally {
+    bitmap.close()
+  }
+}

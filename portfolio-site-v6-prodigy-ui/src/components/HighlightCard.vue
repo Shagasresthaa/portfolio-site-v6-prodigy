@@ -80,6 +80,7 @@ import { computed, ref } from 'vue'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faEye } from '@fortawesome/free-solid-svg-icons'
 import type { HighlightItem } from '@/types/highlight'
+import { getYoutubeEmbedId } from '@/utils/youtube'
 
 const props = defineProps<{ item: HighlightItem }>()
 defineEmits<{ view: [] }>()
@@ -94,12 +95,5 @@ const tags = computed(() =>
     .filter(Boolean),
 )
 
-// Matches most YouTube URL shapes (watch?v=, youtu.be/, embed/, etc.) - the
-// video ID is always the 11-character group this regex isolates.
-const YOUTUBE_ID_REGEX = /^.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
-
-const youTubeId = computed(() => {
-  const match = props.item.videoUrl?.match(YOUTUBE_ID_REGEX)
-  return match?.[1]?.length === 11 ? match[1] : ''
-})
+const youTubeId = computed(() => getYoutubeEmbedId(props.item.videoUrl))
 </script>
