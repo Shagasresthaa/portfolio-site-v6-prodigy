@@ -9,28 +9,27 @@
         Back to account
       </a>
 
-      <div class="mb-6 text-center">
-        <h1 class="font-salsa mb-2 text-3xl">Two-factor authentication</h1>
+      <div class="font-salsa mb-6 text-center">
+        <h1 class="mb-2 text-3xl">Two-factor authentication</h1>
         <p class="text-ink-muted text-sm">Require an authenticator app code at login.</p>
       </div>
 
       <div
         class="border-ink-muted/20 bg-surface-muted/70 font-salsa flex flex-col gap-4 rounded-2xl border p-8 shadow-xl"
       >
-        <p class="text-warning text-xs">
-          This is a UI mock - codes aren't actually verified against the secret yet. Real TOTP
-          enrollment needs the API to generate/store the secret and validate codes server-side.
-        </p>
+        <p v-if="loading" class="text-ink-muted text-sm">Loading…</p>
 
         <!-- Enabled -->
-        <template v-if="isEnabled && !revealedBackupCodes">
+        <template v-else-if="isEnabled && !revealedBackupCodes">
           <p class="text-secondary flex items-center gap-2 text-sm">
             <ShieldCheckIcon class="size-5" aria-hidden="true" />
             Authenticator app is enabled.
           </p>
+          <p class="text-ink-muted text-xs">{{ remainingBackupCodes }} backup codes remaining.</p>
           <button
             type="button"
-            class="border-ink-muted/30 hover:bg-surface rounded-lg border px-4 py-2 text-sm transition"
+            :disabled="busy"
+            class="border-ink-muted/30 hover:bg-surface rounded-lg border px-4 py-2 text-sm transition disabled:opacity-60"
             @click="handleRegenerateBackupCodes"
           >
             Regenerate backup codes
@@ -52,7 +51,8 @@
             </div>
             <button
               type="button"
-              class="text-danger mt-3 text-sm hover:opacity-80"
+              :disabled="busy"
+              class="text-danger mt-3 text-sm hover:opacity-80 disabled:opacity-60"
               @click="handleDisable"
             >
               Disable two-factor authentication
@@ -78,8 +78,17 @@
         <!-- Mid-enrollment -->
         <template v-else-if="pendingSecret">
           <p class="text-sm">
-            Add this key to your authenticator app (Google Authenticator, Authy, etc.):
+            Scan this with your authenticator app (Google Authenticator, Authy, etc.):
           </p>
+          <img
+            v-if="pendingQrCodeImagePng"
+            :src="`data:image/png;base64,${pendingQrCodeImagePng}`"
+            alt="Two-factor authentication QR code"
+            class="mx-auto rounded-lg bg-white p-2"
+            width="200"
+            height="200"
+          />
+          <p class="text-ink-muted text-xs">Or enter this key manually:</p>
           <p class="bg-surface rounded-lg p-3 font-mono text-sm break-all">
             {{ pendingSecret }}
           </p>
@@ -99,14 +108,16 @@
           <div class="flex gap-2">
             <button
               type="button"
-              class="bg-primary text-primary-contrast rounded-lg px-4 py-2 text-sm transition hover:opacity-90"
+              :disabled="busy"
+              class="bg-primary text-primary-contrast rounded-lg px-4 py-2 text-sm transition hover:opacity-90 disabled:opacity-60"
               @click="handleConfirm"
             >
-              Confirm
+              {{ busy ? 'Confirming…' : 'Confirm' }}
             </button>
             <button
               type="button"
-              class="border-ink-muted/30 hover:bg-surface rounded-lg border px-4 py-2 text-sm transition"
+              :disabled="busy"
+              class="border-ink-muted/30 hover:bg-surface rounded-lg border px-4 py-2 text-sm transition disabled:opacity-60"
               @click="cancelEnrollment"
             >
               Cancel
@@ -122,8 +133,9 @@
           </p>
           <button
             type="button"
-            class="bg-primary text-primary-contrast rounded-lg px-4 py-2 text-sm transition hover:opacity-90"
-            @click="pendingSecret = startEnrollment()"
+            :disabled="busy"
+            class="bg-primary text-primary-contrast rounded-lg px-4 py-2 text-sm transition hover:opacity-90 disabled:opacity-60"
+            @click="handleStartEnrollment"
           >
             Enable authenticator app
           </button>
@@ -136,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import {
   ArrowLeftIcon,
   ShieldCheckIcon,
@@ -150,7 +162,11 @@ import { useAuthStore } from '@/stores/auth'
 const authStore = useAuthStore()
 const {
   isEnabled,
+  remainingBackupCodes,
+  loading,
   pendingSecret,
+  pendingQrCodeImagePng,
+  refresh,
   startEnrollment,
   confirmEnrollment,
   cancelEnrollment,
@@ -162,34 +178,62 @@ const code = ref('')
 const disablePassword = ref('')
 const showDisablePassword = ref(false)
 const revealedBackupCodes = ref<string[] | null>(null)
+const busy = ref(false)
 const error = ref<string | null>(null)
 
-function handleConfirm() {
+onMounted(refresh)
+
+async function handleStartEnrollment() {
+  busy.value = true
+  error.value = null
   try {
-    revealedBackupCodes.value = confirmEnrollment(code.value)
+    await startEnrollment()
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to start enrollment.'
+  } finally {
+    busy.value = false
+  }
+}
+
+async function handleConfirm() {
+  busy.value = true
+  error.value = null
+  try {
+    revealedBackupCodes.value = await confirmEnrollment(code.value)
     code.value = ''
-    error.value = null
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to confirm code.'
+  } finally {
+    busy.value = false
   }
 }
 
-function handleRegenerateBackupCodes() {
+async function handleRegenerateBackupCodes() {
+  busy.value = true
+  error.value = null
   try {
-    revealedBackupCodes.value = regenerateBackupCodes()
-    error.value = null
+    revealedBackupCodes.value = await regenerateBackupCodes()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to regenerate backup codes.'
+  } finally {
+    busy.value = false
   }
 }
 
-function handleDisable() {
-  if (!authStore.verifyPassword(disablePassword.value)) {
+async function handleDisable() {
+  if (!(await authStore.verifyPassword(disablePassword.value))) {
     error.value = 'Current password is incorrect.'
     return
   }
-  disable()
-  disablePassword.value = ''
+  busy.value = true
   error.value = null
+  try {
+    await disable()
+    disablePassword.value = ''
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to disable two-factor authentication.'
+  } finally {
+    busy.value = false
+  }
 }
 </script>

@@ -1,64 +1,41 @@
 import { ref } from 'vue'
+import { authFetch } from '@/composables/useApi'
 
-const STORAGE_KEY = 'admin-2fa'
-
-interface TwoFactorState {
+interface EnrollmentOptions {
   secret: string
-  backupCodes: string[]
+  otpauthUri: string
+  qrCodeImagePng: string
 }
 
-function readState(): TwoFactorState | null {
-  if (typeof localStorage === 'undefined') return null
-  const raw = localStorage.getItem(STORAGE_KEY)
-  if (!raw) return null
-  try {
-    return JSON.parse(raw) as TwoFactorState
-  } catch {
-    return null
-  }
-}
-
-function writeState(state: TwoFactorState | null) {
-  if (state === null) {
-    localStorage.removeItem(STORAGE_KEY)
-    return
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-}
-
-function randomBase32Secret(length = 16): string {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
-  return Array.from({ length }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join(
-    '',
-  )
-}
-
-function generateBackupCodes(count = 8): string[] {
-  return Array.from({ length: count }, () => {
-    const a = Math.random().toString(36).slice(2, 6).toUpperCase()
-    const b = Math.random().toString(36).slice(2, 6).toUpperCase()
-    return `${a}-${b}`
-  })
-}
-
-/**
- * Local-only stand-in for TOTP-based 2FA. There's no backend yet to
- * generate/store a real authenticator secret or verify submitted codes
- * server-side, so "confirming" here only checks the code *looks* like a
- * 6-digit TOTP code - it isn't actually validated against the secret.
- * Swap for a real enrollment/verification API once one exists.
- */
 export function useTwoFactor() {
-  const state = ref<TwoFactorState | null>(readState())
-  const isEnabled = ref(state.value !== null)
+  const isEnabled = ref(false)
+  const remainingBackupCodes = ref(0)
+  const loading = ref(false)
   const pendingSecret = ref<string | null>(null)
+  const pendingQrCodeImagePng = ref<string | null>(null)
 
-  function startEnrollment(): string {
-    pendingSecret.value = randomBase32Secret()
-    return pendingSecret.value
+  async function refresh() {
+    loading.value = true
+    try {
+      const response = await authFetch('/api/admin/totp/status')
+      if (!response.ok) throw new Error('Failed to load two-factor status.')
+      const status = (await response.json()) as { enabled: boolean; remainingBackupCodes: number }
+      isEnabled.value = status.enabled
+      remainingBackupCodes.value = status.remainingBackupCodes
+    } finally {
+      loading.value = false
+    }
   }
 
-  function confirmEnrollment(code: string): string[] {
+  async function startEnrollment() {
+    const response = await authFetch('/api/admin/totp/enroll/begin', { method: 'POST' })
+    if (!response.ok) throw new Error('Failed to start enrollment.')
+    const options = (await response.json()) as EnrollmentOptions
+    pendingSecret.value = options.secret
+    pendingQrCodeImagePng.value = options.qrCodeImagePng
+  }
+
+  async function confirmEnrollment(code: string): Promise<string[]> {
     if (!/^\d{6}$/.test(code.trim())) {
       throw new Error('Enter the 6-digit code from your authenticator app.')
     }
@@ -66,35 +43,51 @@ export function useTwoFactor() {
       throw new Error('Start enrollment first.')
     }
 
-    const backupCodes = generateBackupCodes()
-    state.value = { secret: pendingSecret.value, backupCodes }
-    isEnabled.value = true
-    writeState(state.value)
+    const response = await authFetch(
+      `/api/admin/totp/enroll/confirm?code=${encodeURIComponent(code.trim())}`,
+      { method: 'POST' },
+    )
+    if (response.status === 400) {
+      throw new Error('Invalid code - check the time on your device and try again.')
+    }
+    if (!response.ok) {
+      throw new Error('Failed to confirm code.')
+    }
+
+    const backupCodes = (await response.json()) as string[]
     pendingSecret.value = null
+    pendingQrCodeImagePng.value = null
+    await refresh()
     return backupCodes
   }
 
   function cancelEnrollment() {
     pendingSecret.value = null
+    pendingQrCodeImagePng.value = null
   }
 
-  function disable() {
-    state.value = null
+  async function disable() {
+    const response = await authFetch('/api/admin/totp', { method: 'DELETE' })
+    if (!response.ok) throw new Error('Failed to disable two-factor authentication.')
     isEnabled.value = false
-    writeState(null)
+    remainingBackupCodes.value = 0
   }
 
-  function regenerateBackupCodes(): string[] {
-    if (!state.value) throw new Error('Two-factor authentication is not enabled.')
-    state.value = { ...state.value, backupCodes: generateBackupCodes() }
-    writeState(state.value)
-    return state.value.backupCodes
+  async function regenerateBackupCodes(): Promise<string[]> {
+    const response = await authFetch('/api/admin/totp/backup-codes/regenerate', { method: 'POST' })
+    if (!response.ok) throw new Error('Failed to regenerate backup codes.')
+    const backupCodes = (await response.json()) as string[]
+    await refresh()
+    return backupCodes
   }
 
   return {
-    state,
     isEnabled,
+    remainingBackupCodes,
+    loading,
     pendingSecret,
+    pendingQrCodeImagePng,
+    refresh,
     startEnrollment,
     confirmEnrollment,
     cancelEnrollment,

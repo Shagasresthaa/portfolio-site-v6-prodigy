@@ -18,11 +18,17 @@ import org.springframework.transaction.annotation.Transactional;
 import com.sresthaa.admin.model.AdminAccount;
 import com.sresthaa.admin.model.SystemOverride;
 import com.sresthaa.admin.model.SystemOverrideKeys;
+import com.sresthaa.admin.model.TotpCredential;
 import com.sresthaa.admin.model.WebAuthnCredential;
 import com.sresthaa.admin.repository.AdminAccountRepository;
 import com.sresthaa.admin.repository.SystemOverrideRepository;
+import com.sresthaa.admin.repository.TotpCredentialRepository;
 import com.sresthaa.admin.repository.WebAuthnCredentialRepository;
 import com.sresthaa.admin.webauthn.WebAuthnChallengeStore;
+
+import dev.samstevens.totp.code.DefaultCodeGenerator;
+import dev.samstevens.totp.secret.DefaultSecretGenerator;
+import dev.samstevens.totp.time.SystemTimeProvider;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -40,6 +46,9 @@ class AuthControllerTest {
 
 	@Autowired
 	private WebAuthnCredentialRepository webAuthnCredentialRepository;
+
+	@Autowired
+	private TotpCredentialRepository totpCredentialRepository;
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -115,5 +124,72 @@ class AuthControllerTest {
 				.contentType(MediaType.TEXT_PLAIN)
 				.content("{}"))
 				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void respondsTotpRequiredWhenAccountHasTotpAndNoWebAuthn() throws Exception {
+		systemOverrideRepository.deleteById(SystemOverrideKeys.BYPASS_SECOND_FACTOR);
+		enableTotp(account, new DefaultSecretGenerator().generate());
+
+		mockMvc.perform(post("/api/admin/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"username\":\"test-admin\",\"password\":\"correct-horse\"}"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("TOTP_REQUIRED"))
+				.andExpect(jsonPath("$.token").doesNotExist());
+	}
+
+	@Test
+	void respondsChoiceRequiredWhenBothFactorsAvailable() throws Exception {
+		systemOverrideRepository.deleteById(SystemOverrideKeys.BYPASS_SECOND_FACTOR);
+		webAuthnCredentialRepository.save(new WebAuthnCredential(account, new byte[16], new byte[] { 1, 2, 3 },
+				new byte[] { 4, 5, 6 }, 0L, null, "Test Key"));
+		enableTotp(account, new DefaultSecretGenerator().generate());
+
+		mockMvc.perform(post("/api/admin/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"username\":\"test-admin\",\"password\":\"correct-horse\"}"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("SECOND_FACTOR_CHOICE_REQUIRED"))
+				.andExpect(jsonPath("$.webAuthnOptions").isNotEmpty())
+				.andExpect(jsonPath("$.availableMethods[0]").value("WEBAUTHN"))
+				.andExpect(jsonPath("$.availableMethods[1]").value("TOTP"))
+				.andExpect(jsonPath("$.token").doesNotExist());
+	}
+
+	@Test
+	void totpVerifyRejectsInvalidCode() throws Exception {
+		enableTotp(account, new DefaultSecretGenerator().generate());
+
+		mockMvc.perform(post("/api/admin/auth/totp/verify")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"username\":\"test-admin\",\"code\":\"000000\"}"))
+				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void totpVerifySucceedsWithValidCode() throws Exception {
+		String secret = new DefaultSecretGenerator().generate();
+		enableTotp(account, secret);
+		String code = currentTotpCode(secret);
+
+		mockMvc.perform(post("/api/admin/auth/totp/verify")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"username\":\"test-admin\",\"code\":\"" + code + "\"}"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("OK"))
+				.andExpect(jsonPath("$.token").isNotEmpty());
+	}
+
+	private void enableTotp(AdminAccount account, String secret) {
+		TotpCredential credential = new TotpCredential(account, secret);
+		credential.setEnabled(true);
+		totpCredentialRepository.save(credential);
+	}
+
+	private String currentTotpCode(String secret) throws Exception {
+		SystemTimeProvider timeProvider = new SystemTimeProvider();
+		long counter = Math.floorDiv(timeProvider.getTime(), 30);
+		return new DefaultCodeGenerator().generate(secret, counter);
 	}
 }

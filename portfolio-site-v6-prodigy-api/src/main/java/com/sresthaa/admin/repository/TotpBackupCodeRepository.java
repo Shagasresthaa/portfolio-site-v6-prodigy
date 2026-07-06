@@ -10,4 +10,6 @@ import com.sresthaa.admin.model.TotpBackupCode;
 public interface TotpBackupCodeRepository extends JpaRepository<TotpBackupCode, UUID> {
 
 	List<TotpBackupCode> findByTotpCredentialId(UUID totpCredentialId);
+
+	List<TotpBackupCode> findByTotpCredentialIdAndUsedFalse(UUID totpCredentialId);
 }

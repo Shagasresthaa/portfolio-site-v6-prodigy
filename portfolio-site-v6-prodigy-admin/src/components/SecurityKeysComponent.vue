@@ -9,8 +9,8 @@
         Back to account
       </a>
 
-      <div class="mb-6 text-center">
-        <h1 class="font-salsa mb-2 text-3xl">Security keys</h1>
+      <div class="font-salsa mb-6 text-center">
+        <h1 class="mb-2 text-3xl">Security keys</h1>
         <p class="text-ink-muted text-sm">
           Hardware keys (YubiKey, etc.) for passwordless sign-in via WebAuthn.
         </p>

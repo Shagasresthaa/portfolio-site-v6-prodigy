@@ -9,8 +9,8 @@
         Back to account
       </a>
 
-      <div class="mb-6 text-center">
-        <h1 class="font-salsa mb-2 text-3xl">Reset password</h1>
+      <div class="font-salsa mb-6 text-center">
+        <h1 class="mb-2 text-3xl">Reset password</h1>
         <p class="text-ink-muted text-sm">Change the password used to sign in.</p>
       </div>
 

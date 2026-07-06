@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sresthaa.admin.dto.LoginRequest;
 import com.sresthaa.admin.dto.LoginResponse;
+import com.sresthaa.admin.dto.TotpLoginRequest;
 import com.sresthaa.admin.service.AuthService;
 
 @RestController
@@ -31,5 +32,10 @@ public class AuthController {
 	@PostMapping(value = "/webauthn/verify", consumes = MediaType.TEXT_PLAIN_VALUE)
 	public LoginResponse verifyWebAuthn(@RequestParam String username, @RequestBody String authenticationResponseJSON) {
 		return authService.completeWebAuthnLogin(username, authenticationResponseJSON);
+	}
+
+	@PostMapping("/totp/verify")
+	public LoginResponse verifyTotp(@RequestBody TotpLoginRequest request) {
+		return authService.completeTotpLogin(request.username(), request.code());
 	}
 }
