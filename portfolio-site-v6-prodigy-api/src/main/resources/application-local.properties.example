@@ -15,12 +15,12 @@ jwt.secret=REPLACE_WITH_YOUR_OWN_GENERATED_KEY
 jwt.expiration-minutes=60
 
 # Comma-separated browser origins allowed to call this API
-cors.allowed-origins=http://localhost:4321
+cors.allowed-origins=http://localhost:PORT
 
 # WebAuthn relying party - rpId must be the admin frontend's domain (no scheme/port), origin is its full origin
 webauthn.relying-party-id=localhost
 webauthn.relying-party-name=Portfolio Admin
-webauthn.origin=http://localhost:4321
+webauthn.origin=http://localhost:PORT
 
 # Cloudflare R2 (S3-compatible object storage) — fill in from the R2 dashboard
 r2.account-id=your-cloudflare-account-id

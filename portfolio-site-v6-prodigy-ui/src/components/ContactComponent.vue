@@ -88,17 +88,19 @@
 
       <button
         type="submit"
-        class="bg-secondary text-secondary-contrast font-salsa group flex w-full items-center justify-center gap-2 rounded-lg px-8 py-3 transition hover:opacity-90"
+        :disabled="submitting"
+        class="bg-secondary text-secondary-contrast font-salsa group flex w-full items-center justify-center gap-2 rounded-lg px-8 py-3 transition hover:opacity-90 disabled:opacity-60"
       >
         <FontAwesomeIcon
           :icon="faPaperPlane"
           class="size-4 transition-transform group-hover:translate-x-1"
           aria-hidden="true"
         />
-        Send Message
+        {{ submitting ? 'Sending…' : 'Send Message' }}
       </button>
 
-      <p v-if="submitted" class="text-secondary -mt-4 text-center text-sm">
+      <p v-if="submitError" class="text-danger -mt-4 text-center text-sm">{{ submitError }}</p>
+      <p v-else-if="submitted" class="text-secondary -mt-4 text-center text-sm">
         Thanks! Your message has been noted.
       </p>
     </form>
@@ -115,6 +117,7 @@ import {
   faTag,
   faUser,
 } from '@fortawesome/free-solid-svg-icons'
+import { getApiBaseUrl } from '@/utils/apiBaseUrl'
 
 // Practical RFC 5322-ish email pattern (not the full spec, but rejects obvious garbage).
 const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+$/
@@ -126,11 +129,14 @@ const form = reactive({
   message: '',
 })
 const postAnonymously = ref(false)
+const submitting = ref(false)
 const submitted = ref(false)
 const emailError = ref<string | null>(null)
+const submitError = ref<string | null>(null)
 
-function handleSubmit() {
+async function handleSubmit() {
   submitted.value = false
+  submitError.value = null
 
   const name = form.name.trim()
   const email = form.email.trim()
@@ -149,10 +155,23 @@ function handleSubmit() {
     subject: subject || undefined,
     message,
   }
-  console.log('Contact form submitted:', payload)
 
-  submitted.value = true
-  Object.assign(form, { name: '', email: '', subject: '', message: '' })
-  postAnonymously.value = false
+  submitting.value = true
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/api/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (!response.ok) throw new Error('Failed to send message.')
+
+    submitted.value = true
+    Object.assign(form, { name: '', email: '', subject: '', message: '' })
+    postAnonymously.value = false
+  } catch (err) {
+    submitError.value = err instanceof Error ? err.message : 'Failed to send message.'
+  } finally {
+    submitting.value = false
+  }
 }
 </script>

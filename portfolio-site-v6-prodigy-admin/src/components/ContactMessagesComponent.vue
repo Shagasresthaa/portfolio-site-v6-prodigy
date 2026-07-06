@@ -38,7 +38,7 @@
                 type="button"
                 class="bg-secondary-soft text-secondary rounded-lg p-2 transition hover:opacity-80"
                 title="Mark as read"
-                @click="markAsRead(entry.id)"
+                @click="handleMarkAsRead(entry.id)"
               >
                 <CheckIcon class="size-4" aria-hidden="true" />
               </button>
@@ -70,27 +70,33 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { onMounted } from 'vue'
 import { CheckIcon, EnvelopeIcon, EnvelopeOpenIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import AuthGate from '@/components/AuthGate.vue'
-import { useCachedResource } from '@/composables/useCachedResource'
 import { useContactMessages, type ContactMessage } from '@/composables/useContactMessages'
 
-interface ContactData {
-  messages: ContactMessage[]
-}
+const { messages, unreadCount, loading, error, refresh, markAsRead, deleteMessage } = useContactMessages()
 
-const { data, loading, error } = useCachedResource<ContactData>('contact-content', '/data/contact.json')
-const baseMessages = computed(() => data.value?.messages ?? null)
-const { messages, unreadCount, markAsRead, deleteMessage } = useContactMessages(baseMessages)
+onMounted(refresh)
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString()
 }
 
-function handleDelete(entry: ContactMessage) {
-  if (confirm(`Delete message from ${entry.email}?`)) {
-    deleteMessage(entry.id)
+async function handleMarkAsRead(id: string) {
+  try {
+    await markAsRead(id)
+  } catch {
+    // Non-critical - the admin can just retry the click.
+  }
+}
+
+async function handleDelete(entry: ContactMessage) {
+  if (!confirm(`Delete message from ${entry.email}?`)) return
+  try {
+    await deleteMessage(entry.id)
+  } catch {
+    // Non-critical - the admin can just retry the click.
   }
 }
 </script>
