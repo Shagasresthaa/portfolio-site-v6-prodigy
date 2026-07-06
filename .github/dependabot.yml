@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /portfolio-site-v6-prodigy-api
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: npm
+    directory: /portfolio-site-v6-prodigy-ui
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: npm
+    directory: /portfolio-site-v6-prodigy-admin
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

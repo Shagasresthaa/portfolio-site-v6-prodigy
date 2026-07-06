@@ -1,0 +1,27 @@
+spring.datasource.url=jdbc:sqlite:data/app.db
+spring.datasource.username=app
+spring.datasource.password=change-me
+spring.datasource.driver-class-name=org.sqlite.JDBC
+
+# No migration tool — schema is managed via ddl-auto. A new NOT NULL column with no default
+# on a populated table will fail at boot; handle it manually when that comes up.
+spring.jpa.hibernate.ddl-auto=update
+
+# AES-256 key (base64) encrypting the TOTP secret column at rest — generate your own via `openssl rand -base64 32`
+totp.secret-encryption-key=REPLACE_WITH_YOUR_OWN_GENERATED_KEY
+
+# HMAC key (base64) signing admin session JWTs — generate your own via `openssl rand -base64 48`
+jwt.secret=REPLACE_WITH_YOUR_OWN_GENERATED_KEY
+jwt.expiration-minutes=60
+
+# Comma-separated browser origins allowed to call this API
+cors.allowed-origins=http://localhost:4321
+
+# Cloudflare R2 (S3-compatible object storage) — fill in from the R2 dashboard
+r2.account-id=your-cloudflare-account-id
+r2.access-key-id=your-r2-access-key-id
+r2.secret-access-key=your-r2-secret-access-key
+r2.bucket-name=your-bucket-name
+r2.endpoint=https://${r2.account-id}.r2.cloudflarestorage.com
+# Public URL base images will be served from (r2.dev dev URL for now, custom domain later)
+r2.public-base-url=https://pub-xxxxxxxx.r2.dev

@@ -1,0 +1,11 @@
+[versions]
+jjwt = "0.13.0"
+webauthn4j = "0.31.8.RELEASE"
+totp = "1.7.1"
+
+[libraries]
+jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
+jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
+jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
+webauthn4j-core = { module = "com.webauthn4j:webauthn4j-core", version.ref = "webauthn4j" }
+totp = { module = "dev.samstevens.totp:totp", version.ref = "totp" }

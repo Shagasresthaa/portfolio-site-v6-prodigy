@@ -1,5 +1,5 @@
 package com.sresthaa.publicui.model;
 
-public class Gallery {
+public class Highlight {
 
 }

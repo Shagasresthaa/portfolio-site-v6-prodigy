@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { getApiBaseUrl } from '@/utils/apiBaseUrl'
+import { decodeJwtExpiryMs } from '@/utils/jwt'
 
 const STORAGE_KEY = 'admin-session'
 const PASSWORD_OVERRIDE_KEY = 'admin-password-override'
 const USERNAME_OVERRIDE_KEY = 'admin-username-override'
-const SESSION_TTL_MS = 24 * 60 * 60 * 1000 // 24h
 
 interface Session {
   username: string
@@ -13,42 +14,35 @@ interface Session {
 }
 
 /**
- * The "current" username/password are normally PUBLIC_ADMIN_USERNAME/
- * PUBLIC_ADMIN_PASSWORD, but changeUsername()/resetPassword() below can
- * override them client-side (there's no real user table to persist to yet)
- * - the override, if present, wins.
+ * Used only by resetPassword()/verifyPassword() below, which are still mocked -
+ * there's no real /api/admin/auth/* endpoint for those yet. login() itself no
+ * longer uses this, see apiLogin().
  */
-function getExpectedUsername(): string {
-  const override = localStorage.getItem(USERNAME_OVERRIDE_KEY)
-  if (override !== null) return override
-  return import.meta.env.PUBLIC_ADMIN_USERNAME || 'admin'
-}
-
 function getExpectedPassword(): string {
   const override = localStorage.getItem(PASSWORD_OVERRIDE_KEY)
   if (override !== null) return override
   return import.meta.env.PUBLIC_ADMIN_PASSWORD || 'admin'
 }
 
-/**
- * Stand-in for the not-yet-built `/api/admin/auth/login` endpoint (see
- * CLAUDE.md: BlogController/ContactFormController/etc. are scaffolded but
- * empty). Validates against a single dev credential rather than a real user
- * table - falls back to admin/admin if PUBLIC_ADMIN_* env vars are unset.
- * `login()` is async and returns a fake bearer token so the calling code
- * (LoginForm.vue) already has the shape it'll need once this is swapped for
- * a real `fetch('/api/admin/auth/login', ...)` call.
- */
-async function mockLogin(username: string, password: string): Promise<Session> {
-  if (username !== getExpectedUsername() || password !== getExpectedPassword()) {
+async function apiLogin(username: string, password: string): Promise<Session> {
+  const response = await fetch(`${getApiBaseUrl()}/api/admin/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  })
+
+  if (response.status === 401) {
     throw new Error('Incorrect username or password.')
   }
-
-  return {
-    username,
-    token: `mock-token.${btoa(`${username}:${Date.now()}`)}`,
-    expiresAt: Date.now() + SESSION_TTL_MS,
+  if (response.status === 501) {
+    throw new Error('Second-factor login is not built yet - the bypass override must be enabled in the database.')
   }
+  if (!response.ok) {
+    throw new Error('Failed to sign in.')
+  }
+
+  const { token } = (await response.json()) as { token: string }
+  return { username, token, expiresAt: decodeJwtExpiryMs(token) }
 }
 
 function readSession(): Session | null {
@@ -79,7 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
   const username = computed(() => session.value?.username ?? null)
 
   async function login(usernameInput: string, password: string) {
-    const newSession = await mockLogin(usernameInput, password)
+    const newSession = await apiLogin(usernameInput, password)
     session.value = newSession
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newSession))
   }
