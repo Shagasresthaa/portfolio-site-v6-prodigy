@@ -33,6 +33,14 @@ dependencies {
 	// TOTP (mobile authenticator backup 2FA) + QR provisioning
 	implementation libs.totp
 
+	// S3-compatible client used to upload images to Cloudflare R2
+	implementation libs.awssdk.s3
+
+	// Already present transitively at runtime (Spring MVC's own JSON message converter needs
+	// it), but not compile-visible to our code without declaring it directly - needed here to
+	// hand-serialize HomeContent's JSON-in-a-column fields (see HomeContentService).
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+
 	runtimeOnly 'org.postgresql:postgresql'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'

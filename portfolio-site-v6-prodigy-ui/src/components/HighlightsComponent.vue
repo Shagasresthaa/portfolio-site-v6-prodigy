@@ -151,17 +151,17 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faChevronLeft, faChevronRight, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useCachedResource } from '@/composables/useCachedResource'
 import { useUniformCardHeight } from '@/composables/useUniformCardHeight'
+import { getApiBaseUrl } from '@/utils/apiBaseUrl'
 import HighlightCard from './HighlightCard.vue'
 import TagFilterPopover from './TagFilterPopover.vue'
 import type { HighlightItem } from '@/types/highlight'
 
-interface HighlightsContent {
-  items: HighlightItem[]
-}
-
-const { data: highlightsContent } = useCachedResource<HighlightsContent>(
-  'highlights-content',
-  '/data/highlights.json',
+// Cache key changed (was "highlights-content") since the old mock's cached shape
+// ({ items: [...] }) doesn't match the real API's plain-array response - reusing the old
+// key would read a stale, wrongly-shaped cache back as if it were the new format.
+const { data: highlightsContent } = useCachedResource<HighlightItem[]>(
+  'highlights-content-v2',
+  `${getApiBaseUrl()}/api/highlights`,
 )
 
 const ITEMS_PER_PAGE = 12
@@ -178,7 +178,7 @@ function parseTags(tags: string): string[] {
 }
 
 const sortedItems = computed(() => {
-  const items = highlightsContent.value?.items ?? []
+  const items = highlightsContent.value ?? []
   return [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 })
 

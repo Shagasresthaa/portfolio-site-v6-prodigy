@@ -1,12 +1,12 @@
 export interface ProcessedImage {
-  image: string
-  thumbnailImage: string
+  image: Blob
+  thumbnailImage: Blob
 }
 
 // Long-edge caps, not exact dimensions - aspect ratio is preserved.
-const FULL_MAX_DIMENSION = 1600
+const FULL_MAX_DIMENSION = 2048
 const THUMBNAIL_MAX_DIMENSION = 480
-const FULL_QUALITY = 0.82
+const FULL_QUALITY = 0.9
 const THUMBNAIL_QUALITY = 0.75
 
 function resizeToCanvas(bitmap: ImageBitmap, maxDimension: number): HTMLCanvasElement {
@@ -23,39 +23,37 @@ function resizeToCanvas(bitmap: ImageBitmap, maxDimension: number): HTMLCanvasEl
   return canvas
 }
 
-function canvasToWebpDataUrl(canvas: HTMLCanvasElement, quality: number): Promise<string> {
+// Falls back to PNG on browsers that can't encode WebP (older Safari) - fine, just worth
+// knowing if an uploaded image ends up larger than expected.
+function canvasToWebpBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          reject(new Error('Failed to encode image.'))
-          return
-        }
-        const reader = new FileReader()
-        reader.onloadend = () => resolve(reader.result as string)
-        reader.onerror = () => reject(new Error('Failed to read encoded image.'))
-        reader.readAsDataURL(blob)
-      },
+      (blob) => (blob ? resolve(blob) : reject(new Error('Failed to encode image.'))),
       'image/webp',
       quality,
     )
   })
 }
 
+function canvasToWebpDataUrl(canvas: HTMLCanvasElement, quality: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    canvasToWebpBlob(canvas, quality)
+      .then((blob) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.onerror = () => reject(new Error('Failed to read encoded image.'))
+        reader.readAsDataURL(blob)
+      })
+      .catch(reject)
+  })
+}
+
 /**
  * Converts a single uploaded image into the two sizes HighlightItem needs
  * (src/types/highlight.ts) - a full-size version for the modal and a smaller
- * thumbnail for the grid card - re-encoding both as WebP along the way. The
- * old site stored uploaded images as-is (see MomentForm.tsx in
- * portfolio-site-v5-prime), which is exactly the "images as-is" mistake this
- * is meant to correct. There's no backend yet to do this server-side, so it
- * happens here in the browser via Canvas instead - swap for a real upload
- * endpoint (that presumably does the same resizing/re-encoding, or better,
- * server-side) once one exists.
- *
- * Note: canvas.toBlob('image/webp') silently falls back to PNG on browsers
- * that can't encode WebP (older Safari) - fine for this mock, but worth
- * knowing if an exported image looks larger than expected.
+ * thumbnail for the grid card - re-encoding both as WebP along the way. Returns
+ * Blobs (not data URLs) since these get uploaded to the real image-upload
+ * endpoint - build an object URL via URL.createObjectURL for local preview.
  */
 export async function processImageUpload(file: File): Promise<ProcessedImage> {
   if (!file.type.startsWith('image/')) {
@@ -65,8 +63,8 @@ export async function processImageUpload(file: File): Promise<ProcessedImage> {
   const bitmap = await createImageBitmap(file)
   try {
     const [image, thumbnailImage] = await Promise.all([
-      canvasToWebpDataUrl(resizeToCanvas(bitmap, FULL_MAX_DIMENSION), FULL_QUALITY),
-      canvasToWebpDataUrl(resizeToCanvas(bitmap, THUMBNAIL_MAX_DIMENSION), THUMBNAIL_QUALITY),
+      canvasToWebpBlob(resizeToCanvas(bitmap, FULL_MAX_DIMENSION), FULL_QUALITY),
+      canvasToWebpBlob(resizeToCanvas(bitmap, THUMBNAIL_MAX_DIMENSION), THUMBNAIL_QUALITY),
     ])
     return { image, thumbnailImage }
   } finally {
@@ -77,7 +75,8 @@ export async function processImageUpload(file: File): Promise<ProcessedImage> {
 /**
  * Same conversion, but for entities with only one image field (Project -
  * see src/types/project.ts, which has no separate thumbnail) - full-size,
- * re-encoded as WebP, nothing else.
+ * re-encoded as WebP, nothing else. Still returns a data URL: Projects has no
+ * real upload endpoint yet, so this is still the localStorage-mock path.
  */
 export async function processSingleImageUpload(file: File): Promise<string> {
   if (!file.type.startsWith('image/')) {

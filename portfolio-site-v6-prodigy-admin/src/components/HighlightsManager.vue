@@ -150,11 +150,11 @@
             <p v-if="processingImage" class="text-ink-muted mt-2 text-sm">Processing image…</p>
             <p v-if="imageError" class="text-danger mt-2 text-sm">{{ imageError }}</p>
 
-            <div v-if="imagePreview" class="mt-4 flex gap-4">
+            <div v-if="imagePreviewUrls" class="mt-4 flex gap-4">
               <div>
                 <p class="text-ink-muted mb-1 text-xs">Thumbnail</p>
                 <img
-                  :src="imagePreview.thumbnailImage"
+                  :src="imagePreviewUrls.thumbnailImage"
                   alt="Thumbnail preview"
                   class="border-ink-muted/30 h-32 w-32 rounded border object-cover"
                 />
@@ -162,7 +162,7 @@
               <div>
                 <p class="text-ink-muted mb-1 text-xs">Full size</p>
                 <img
-                  :src="imagePreview.image"
+                  :src="imagePreviewUrls.image"
                   alt="Full size preview"
                   class="border-ink-muted/30 h-32 w-auto rounded border object-cover"
                 />
@@ -251,8 +251,9 @@ import {
 } from '@heroicons/vue/24/outline'
 import { PlayCircleIcon } from '@heroicons/vue/24/solid'
 import AuthGate from '@/components/AuthGate.vue'
-import { deleteHighlight, loadHighlights, upsertHighlight } from '@/composables/useHighlights'
+import { createHighlight, deleteHighlight, loadHighlights, updateHighlight } from '@/composables/useHighlights'
 import { processImageUpload, type ProcessedImage } from '@/composables/useImageProcessing'
+import { uploadImage } from '@/composables/useImageUpload'
 import type { HighlightItem, HighlightMediaType } from '@/types/highlight'
 import { getYoutubeThumbnailUrl } from '@/utils/youtube'
 
@@ -280,11 +281,22 @@ const form = reactive({
   videoUrl: '',
   tags: '',
 })
-const imagePreview = ref<ProcessedImage | null>(null)
+// URLs actually rendered in <img :src>. Either the real, already-uploaded URLs (editing an
+// existing item, image untouched) or local object URLs for a freshly-chosen file, in which
+// case pendingImageBlobs is also set and gets uploaded on save.
+const imagePreviewUrls = ref<{ image: string; thumbnailImage: string } | null>(null)
+const pendingImageBlobs = ref<ProcessedImage | null>(null)
 const processingImage = ref(false)
 const imageError = ref<string | null>(null)
 const saving = ref(false)
 const saveError = ref<string | null>(null)
+
+function revokePendingObjectUrls() {
+  if (pendingImageBlobs.value && imagePreviewUrls.value) {
+    URL.revokeObjectURL(imagePreviewUrls.value.image)
+    URL.revokeObjectURL(imagePreviewUrls.value.thumbnailImage)
+  }
+}
 
 async function refreshList() {
   loading.value = true
@@ -307,7 +319,9 @@ function resetForm() {
   form.mediaType = 'IMAGE'
   form.videoUrl = ''
   form.tags = ''
-  imagePreview.value = null
+  revokePendingObjectUrls()
+  imagePreviewUrls.value = null
+  pendingImageBlobs.value = null
   imageError.value = null
   saveError.value = null
 }
@@ -326,7 +340,8 @@ function openEditForm(item: HighlightItem) {
   form.mediaType = item.mediaType
   form.videoUrl = item.videoUrl ?? ''
   form.tags = item.tags
-  imagePreview.value =
+  pendingImageBlobs.value = null
+  imagePreviewUrls.value =
     item.mediaType === 'IMAGE' && item.image && item.thumbnailImage
       ? { image: item.image, thumbnailImage: item.thumbnailImage }
       : null
@@ -342,7 +357,13 @@ async function handleFileChange(event: Event) {
   processingImage.value = true
   imageError.value = null
   try {
-    imagePreview.value = await processImageUpload(file)
+    const processed = await processImageUpload(file)
+    revokePendingObjectUrls()
+    pendingImageBlobs.value = processed
+    imagePreviewUrls.value = {
+      image: URL.createObjectURL(processed.image),
+      thumbnailImage: URL.createObjectURL(processed.thumbnailImage),
+    }
   } catch (err) {
     imageError.value = err instanceof Error ? err.message : 'Failed to process image.'
   } finally {
@@ -352,8 +373,12 @@ async function handleFileChange(event: Event) {
 
 async function handleDelete(item: HighlightItem) {
   if (!confirm(`Delete "${item.title}"?`)) return
-  deleteHighlight(item.id)
-  await refreshList()
+  try {
+    await deleteHighlight(item.id)
+    await refreshList()
+  } catch (err) {
+    loadError.value = err instanceof Error ? err.message : 'Failed to delete moment.'
+  }
 }
 
 async function handleSave() {
@@ -367,7 +392,7 @@ async function handleSave() {
     saveError.value = 'At least one tag is required.'
     return
   }
-  if (form.mediaType === 'IMAGE' && !imagePreview.value) {
+  if (form.mediaType === 'IMAGE' && !imagePreviewUrls.value) {
     saveError.value = 'Please upload an image.'
     return
   }
@@ -378,29 +403,48 @@ async function handleSave() {
 
   saving.value = true
   try {
-    const id = editingId.value ?? crypto.randomUUID()
-    const createdAt = editingId.value
-      ? (items.value.find((item) => item.id === id)?.createdAt ?? new Date().toISOString())
-      : new Date().toISOString()
+    let image: string | undefined
+    let thumbnailImage: string | undefined
 
-    const item: HighlightItem = {
-      id,
+    if (form.mediaType === 'IMAGE') {
+      if (pendingImageBlobs.value) {
+        // A new file was chosen this session - upload it, then drop the local preview
+        // (revoking its object URLs) now that the real URLs are known.
+        const blobs = pendingImageBlobs.value
+        ;[image, thumbnailImage] = await Promise.all([
+          uploadImage(blobs.image, 'highlights'),
+          uploadImage(blobs.thumbnailImage, 'highlights'),
+        ])
+        revokePendingObjectUrls()
+        pendingImageBlobs.value = null
+        imagePreviewUrls.value = { image, thumbnailImage }
+      } else {
+        // Editing an existing item without touching its image - reuse the real URLs already
+        // shown in the preview.
+        image = imagePreviewUrls.value!.image
+        thumbnailImage = imagePreviewUrls.value!.thumbnailImage
+      }
+    }
+
+    const payload = {
       title: form.title.trim(),
       description: form.description.trim() || undefined,
       caption: form.caption.trim() || undefined,
       mediaType: form.mediaType,
       tags: form.tags.trim(),
-      createdAt,
-      ...(form.mediaType === 'IMAGE'
-        ? { image: imagePreview.value!.image, thumbnailImage: imagePreview.value!.thumbnailImage }
-        : { videoUrl: form.videoUrl.trim() }),
+      ...(form.mediaType === 'IMAGE' ? { image, thumbnailImage } : { videoUrl: form.videoUrl.trim() }),
     }
 
-    upsertHighlight(item)
+    if (editingId.value) {
+      await updateHighlight(editingId.value, payload)
+    } else {
+      await createHighlight(payload)
+    }
+
     await refreshList()
     view.value = 'list'
   } catch (err) {
-    saveError.value = err instanceof Error ? err.message : 'Failed to save - local storage may be full.'
+    saveError.value = err instanceof Error ? err.message : 'Failed to save moment.'
   } finally {
     saving.value = false
   }

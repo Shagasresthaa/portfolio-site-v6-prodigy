@@ -99,6 +99,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faAward, faChevronDown, faFilePdf } from '@fortawesome/free-solid-svg-icons'
 import { faGithub, faLinkedin, faSquareGitlab, faSteam } from '@fortawesome/free-brands-svg-icons'
 import { useCachedResource } from '@/composables/useCachedResource'
+import { getApiBaseUrl } from '@/utils/apiBaseUrl'
 import TimelineWheel from './TimelineWheel.vue'
 import type { TimelineEvent } from '@/types/timeline'
 
@@ -108,7 +109,7 @@ interface HomeContent {
   timeline: TimelineEvent[]
 }
 
-const { data: homeContent } = useCachedResource<HomeContent>('home-content', '/data/home.json')
+const { data: homeContent } = useCachedResource<HomeContent>('home-content', `${getApiBaseUrl()}/api/home`)
 
 const socialLinks = [
   {

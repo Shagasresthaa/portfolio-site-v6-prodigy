@@ -13,20 +13,6 @@
       <p v-else-if="!draft" class="text-danger text-center">No content loaded.</p>
 
       <form v-else class="flex flex-col gap-8" @submit.prevent="handleSave">
-        <div class="flex items-center justify-between">
-          <p class="text-ink-muted text-xs">
-            {{ hasDraft ? 'Showing your saved draft.' : 'Showing default content.' }}
-          </p>
-          <button
-            v-if="hasDraft"
-            type="button"
-            class="text-danger text-xs hover:opacity-80"
-            @click="handleReset"
-          >
-            Reset to defaults
-          </button>
-        </div>
-
         <!-- About hook -->
         <section class="border-ink-muted/20 bg-surface-muted/70 rounded-2xl border p-6">
           <h2 class="mb-3 text-xl">About hook</h2>
@@ -176,11 +162,13 @@
         <div class="flex items-center gap-4">
           <button
             type="submit"
-            class="bg-primary text-primary-contrast rounded-lg px-8 py-3 transition hover:opacity-90"
+            :disabled="saving"
+            class="bg-primary text-primary-contrast rounded-lg px-8 py-3 transition hover:opacity-90 disabled:opacity-60"
           >
-            Save changes
+            {{ saving ? 'Saving…' : 'Save changes' }}
           </button>
           <p v-if="saved" class="text-secondary text-sm">Saved.</p>
+          <p v-if="saveError" class="text-danger text-sm">{{ saveError }}</p>
         </div>
       </form>
     </div>
@@ -192,27 +180,20 @@ import { onMounted, ref, watch } from 'vue'
 import { ChevronDownIcon, ChevronUpIcon, PlusIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import AuthGate from '@/components/AuthGate.vue'
 import { useAuthStore } from '@/stores/auth'
-import {
-  clearHomeOverride,
-  fetchBaseHomeContent,
-  loadHomeContent,
-  saveHomeOverride,
-  type HomeContent,
-} from '@/composables/useHomeContent'
+import { fetchHomeContent, saveHomeContent, type HomeContent } from '@/composables/useHomeContent'
 
 const authStore = useAuthStore()
 
 const draft = ref<HomeContent | null>(null)
-const hasDraft = ref(false)
 const loading = ref(true)
 const loadError = ref<string | null>(null)
+const saving = ref(false)
 const saved = ref(false)
+const saveError = ref<string | null>(null)
 
 onMounted(async () => {
   try {
-    const result = await loadHomeContent()
-    draft.value = result.content
-    hasDraft.value = result.isDraft
+    draft.value = await fetchHomeContent()
   } catch (err) {
     loadError.value = err instanceof Error ? err.message : 'Failed to load content.'
   } finally {
@@ -231,25 +212,19 @@ function move<T>(list: T[], index: number, offset: number) {
   list.splice(target, 0, item as T)
 }
 
-function handleSave() {
+async function handleSave() {
   if (!draft.value) return
-  saveHomeOverride(draft.value)
-  hasDraft.value = true
-  saved.value = true
-}
-
-async function handleReset() {
-  clearHomeOverride()
-  hasDraft.value = false
-  saved.value = false
-  loading.value = true
-  loadError.value = null
+  saving.value = true
+  saveError.value = null
   try {
-    draft.value = await fetchBaseHomeContent()
+    // Not reassigning draft from the response - it's just an echo of what was sent, and doing
+    // so would re-trigger the deep watch above, immediately flipping `saved` back to false.
+    await saveHomeContent(draft.value)
+    saved.value = true
   } catch (err) {
-    loadError.value = err instanceof Error ? err.message : 'Failed to load content.'
+    saveError.value = err instanceof Error ? err.message : 'Failed to save changes.'
   } finally {
-    loading.value = false
+    saving.value = false
   }
 }
 
