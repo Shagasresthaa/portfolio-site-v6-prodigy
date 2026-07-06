@@ -15,9 +15,9 @@ import com.sresthaa.admin.model.AdminAccount;
 import com.sresthaa.admin.model.WebAuthnCredential;
 import com.sresthaa.admin.repository.WebAuthnCredentialRepository;
 import com.webauthn4j.WebAuthnManager;
-import com.webauthn4j.authenticator.Authenticator;
-import com.webauthn4j.authenticator.AuthenticatorImpl;
 import com.webauthn4j.converter.util.ObjectConverter;
+import com.webauthn4j.credential.CredentialRecord;
+import com.webauthn4j.credential.CredentialRecordImpl;
 import com.webauthn4j.data.AttestationConveyancePreference;
 import com.webauthn4j.data.AuthenticationData;
 import com.webauthn4j.data.AuthenticationParameters;
@@ -188,13 +188,15 @@ public class WebAuthnService {
 		COSEKey coseKey = objectConverter.getCborMapper().readValue(storedCredential.getPublicKeyCose(), COSEKey.class);
 		AttestedCredentialData attestedCredentialData = new AttestedCredentialData(aaguid,
 				storedCredential.getCredentialId(), coseKey);
-		Authenticator authenticator = new AuthenticatorImpl(attestedCredentialData, null,
-				storedCredential.getSignatureCount());
+		// uvInitialized/backupEligible/backupState/clientData/clientExtensions/transports aren't persisted -
+		// only the counter and attested credential data are needed for signature/clone-detection verification.
+		CredentialRecord credentialRecord = new CredentialRecordImpl(null, null, null, null,
+				storedCredential.getSignatureCount(), attestedCredentialData, null, null, null, null);
 
 		ServerProperty serverProperty = ServerProperty.builder().origin(origin).rpId(relyingPartyId).challenge(challenge)
 				.build();
-		AuthenticationParameters authenticationParameters = new AuthenticationParameters(serverProperty, authenticator,
-				null, true);
+		AuthenticationParameters authenticationParameters = new AuthenticationParameters(serverProperty,
+				credentialRecord, null, true);
 
 		try {
 			webAuthnManager.verify(authenticationData, authenticationParameters);
