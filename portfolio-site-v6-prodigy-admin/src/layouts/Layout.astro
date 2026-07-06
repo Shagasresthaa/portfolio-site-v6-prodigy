@@ -1,34 +1,45 @@
 ---
 import '../styles/main.css';
+import { getApiBaseUrl } from '../utils/apiBaseUrl';
 
 interface Props {
 	title?: string;
 }
 
 const { title = 'Portfolio Admin' } = Astro.props;
+
+// Static build, no server for a real header - CSP goes in as a meta tag, so frame-ancestors is
+// a no-op (browsers ignore it outside a real HTTP header). The 3 script hashes are Astro's own
+// island-hydration runtime, not ours - recompute on Astro upgrades by grepping dist/**/*.html
+// for inline <script> tags and hashing each distinct one. style-src keeps 'unsafe-inline'
+// instead of Astro's security.csp feature: that auto-hashes styles, which invalidates
+// 'unsafe-inline' per spec and would break NavbarComponent's runtime :style binding.
+// Only rendered in prod - Vite's dev-server tooling injects its own inline scripts that don't
+// exist in the built output, so the meta tag would just block dev, not protect anything real.
+const csp = [
+	"default-src 'self'",
+	"script-src 'self' 'sha256-SaCkFfPruIdTXT8/97JArQmGxiJAL2o4bBDvSgJ5y3Q=' 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-eIXWvAmxkr251LJZkjniEK5LcPF3NkapbJepohwYRIc='",
+	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+	"font-src 'self' https://fonts.gstatic.com",
+	"img-src 'self' data: https://img.youtube.com",
+	`connect-src 'self' ${getApiBaseUrl()}`,
+	"object-src 'none'",
+	"base-uri 'self'",
+	"form-action 'self'",
+].join('; ');
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
+		{!import.meta.env.DEV && <meta http-equiv="Content-Security-Policy" content={csp} />}
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
-		<script is:inline>
-			// Every navigation is a fresh server-rendered page (not an SPA), so
-			// without this the page always paints light first and only flips to
-			// dark once the Navbar's Vue island hydrates and stores/theme.ts
-			// runs - this applies the class synchronously, before first paint,
-			// to avoid that flash. Storage key must match STORAGE_KEY there.
-			try {
-				if (localStorage.getItem('theme') === 'dark') {
-					document.documentElement.classList.add('dark');
-				}
-			} catch {}
-		</script>
+		<script is:inline src="/theme-init.js"></script>
 	</head>
 	<body>
 		<slot />

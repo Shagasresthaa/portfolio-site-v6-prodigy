@@ -29,6 +29,10 @@ import dev.samstevens.totp.time.SystemTimeProvider;
 @Transactional
 class TotpControllerTest {
 
+	// Fixture values only, not a real credential (never used outside this in-memory test DB).
+	private static final String TEST_USERNAME = "test-admin";
+	private static final String TEST_PASSWORD = "correct-horse";
+
 	@Autowired
 	private MockMvc mockMvc;
 
@@ -46,7 +50,7 @@ class TotpControllerTest {
 	@BeforeEach
 	void createAccountAndToken() {
 		AdminAccount account = adminAccountRepository
-				.save(new AdminAccount("test-admin", passwordEncoder.encode("correct-horse")));
+				.save(new AdminAccount(TEST_USERNAME, passwordEncoder.encode(TEST_PASSWORD)));
 		token = jwtService.issueToken(account.getUsername());
 	}
 

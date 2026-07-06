@@ -35,6 +35,10 @@ import dev.samstevens.totp.time.SystemTimeProvider;
 @Transactional
 class AuthControllerTest {
 
+	// Fixture values only, not a real credential (never used outside this in-memory test DB).
+	private static final String TEST_USERNAME = "test-admin";
+	private static final String TEST_PASSWORD = "correct-horse";
+
 	@Autowired
 	private MockMvc mockMvc;
 
@@ -62,16 +66,16 @@ class AuthControllerTest {
 
 	@BeforeEach
 	void createAccount() {
-		account = adminAccountRepository.save(new AdminAccount("test-admin", passwordEncoder.encode("correct-horse")));
-		challengeStore.consumeRegistrationChallenge("test-admin");
-		challengeStore.consumeAuthenticationChallenge("test-admin");
+		account = adminAccountRepository.save(new AdminAccount(TEST_USERNAME, passwordEncoder.encode(TEST_PASSWORD)));
+		challengeStore.consumeRegistrationChallenge(TEST_USERNAME);
+		challengeStore.consumeAuthenticationChallenge(TEST_USERNAME);
 	}
 
 	@Test
 	void rejectsWrongPassword() throws Exception {
 		mockMvc.perform(post("/api/admin/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"username\":\"test-admin\",\"password\":\"wrong\"}"))
+				.content("{\"username\":\"%s\",\"password\":\"wrong\"}".formatted(TEST_USERNAME)))
 				.andExpect(status().isUnauthorized());
 	}
 
@@ -81,7 +85,7 @@ class AuthControllerTest {
 
 		mockMvc.perform(post("/api/admin/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"username\":\"test-admin\",\"password\":\"correct-horse\"}"))
+				.content("{\"username\":\"%s\",\"password\":\"%s\"}".formatted(TEST_USERNAME, TEST_PASSWORD)))
 				.andExpect(status().isNotImplemented());
 	}
 
@@ -91,7 +95,7 @@ class AuthControllerTest {
 
 		mockMvc.perform(post("/api/admin/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"username\":\"test-admin\",\"password\":\"correct-horse\"}"))
+				.content("{\"username\":\"%s\",\"password\":\"%s\"}".formatted(TEST_USERNAME, TEST_PASSWORD)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.token").isNotEmpty());
 	}
@@ -110,7 +114,7 @@ class AuthControllerTest {
 
 		mockMvc.perform(post("/api/admin/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"username\":\"test-admin\",\"password\":\"correct-horse\"}"))
+				.content("{\"username\":\"%s\",\"password\":\"%s\"}".formatted(TEST_USERNAME, TEST_PASSWORD)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("WEBAUTHN_REQUIRED"))
 				.andExpect(jsonPath("$.webAuthnOptions").isNotEmpty())
@@ -120,7 +124,7 @@ class AuthControllerTest {
 	@Test
 	void webAuthnVerifyRejectsWithoutPendingChallenge() throws Exception {
 		mockMvc.perform(post("/api/admin/auth/webauthn/verify")
-				.param("username", "test-admin")
+				.param("username", TEST_USERNAME)
 				.contentType(MediaType.TEXT_PLAIN)
 				.content("{}"))
 				.andExpect(status().isUnauthorized());
@@ -133,7 +137,7 @@ class AuthControllerTest {
 
 		mockMvc.perform(post("/api/admin/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"username\":\"test-admin\",\"password\":\"correct-horse\"}"))
+				.content("{\"username\":\"%s\",\"password\":\"%s\"}".formatted(TEST_USERNAME, TEST_PASSWORD)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("TOTP_REQUIRED"))
 				.andExpect(jsonPath("$.token").doesNotExist());
@@ -148,7 +152,7 @@ class AuthControllerTest {
 
 		mockMvc.perform(post("/api/admin/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"username\":\"test-admin\",\"password\":\"correct-horse\"}"))
+				.content("{\"username\":\"%s\",\"password\":\"%s\"}".formatted(TEST_USERNAME, TEST_PASSWORD)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("SECOND_FACTOR_CHOICE_REQUIRED"))
 				.andExpect(jsonPath("$.webAuthnOptions").isNotEmpty())
@@ -163,7 +167,7 @@ class AuthControllerTest {
 
 		mockMvc.perform(post("/api/admin/auth/totp/verify")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"username\":\"test-admin\",\"code\":\"000000\"}"))
+				.content("{\"username\":\"%s\",\"code\":\"000000\"}".formatted(TEST_USERNAME)))
 				.andExpect(status().isUnauthorized());
 	}
 
@@ -175,7 +179,7 @@ class AuthControllerTest {
 
 		mockMvc.perform(post("/api/admin/auth/totp/verify")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"username\":\"test-admin\",\"code\":\"" + code + "\"}"))
+				.content("{\"username\":\"%s\",\"code\":\"%s\"}".formatted(TEST_USERNAME, code)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("OK"))
 				.andExpect(jsonPath("$.token").isNotEmpty());

@@ -33,6 +33,10 @@ import com.sresthaa.admin.webauthn.WebAuthnChallengeStore;
 @Transactional
 class WebAuthnControllerTest {
 
+	// Fixture values only, not a real credential (never used outside this in-memory test DB).
+	private static final String TEST_USERNAME = "test-admin";
+	private static final String TEST_PASSWORD = "correct-horse";
+
 	@Autowired
 	private MockMvc mockMvc;
 
@@ -62,11 +66,11 @@ class WebAuthnControllerTest {
 	@BeforeEach
 	void createAccountAndToken() {
 		account = adminAccountRepository
-				.save(new AdminAccount("test-admin", passwordEncoder.encode("correct-horse")));
+				.save(new AdminAccount(TEST_USERNAME, passwordEncoder.encode(TEST_PASSWORD)));
 		systemOverrideRepository.save(new SystemOverride(SystemOverrideKeys.BYPASS_SECOND_FACTOR, "true"));
 		token = jwtService.issueToken(account.getUsername());
-		challengeStore.consumeRegistrationChallenge("test-admin");
-		challengeStore.consumeAuthenticationChallenge("test-admin");
+		challengeStore.consumeRegistrationChallenge(TEST_USERNAME);
+		challengeStore.consumeAuthenticationChallenge(TEST_USERNAME);
 	}
 
 	@Test
