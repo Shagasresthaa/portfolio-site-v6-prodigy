@@ -1,50 +1,53 @@
 import { ref } from 'vue'
-
-const STORAGE_KEY = 'admin-security-keys'
+import { authFetch } from '@/composables/useApi'
+import { registerSecurityKey as createRegistration } from '@/composables/useWebAuthn'
 
 export interface SecurityKey {
   id: string
-  name: string
-  addedAt: number
+  label: string
+  createdAt: string
+  lastUsedAt: string | null
 }
 
-function readKeys(): SecurityKey[] {
-  if (typeof localStorage === 'undefined') return []
-  const raw = localStorage.getItem(STORAGE_KEY)
-  if (!raw) return []
-  try {
-    return JSON.parse(raw) as SecurityKey[]
-  } catch {
-    return []
-  }
-}
-
-function writeKeys(keys: SecurityKey[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(keys))
-}
-
-/**
- * Local-only stand-in for WebAuthn security key registration
- * (`navigator.credentials.create()`/`.get()`) - there's no relying-party
- * backend yet to verify/store a real credential against, so this just
- * persists a named placeholder entry. Swap for a real WebAuthn ceremony
- * once the API exposes registration/assertion endpoints for it.
- */
 export function useSecurityKeys() {
-  const keys = ref<SecurityKey[]>(readKeys())
+  const keys = ref<SecurityKey[]>([])
+  const loading = ref(false)
 
-  function addKey(name: string) {
-    const trimmed = name.trim()
+  async function refresh() {
+    loading.value = true
+    try {
+      const response = await authFetch('/api/admin/webauthn/credentials')
+      if (!response.ok) throw new Error('Failed to load security keys.')
+      keys.value = (await response.json()) as SecurityKey[]
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function registerKey(label: string) {
+    const trimmed = label.trim()
     if (!trimmed) throw new Error('Give the key a name.')
-    const key: SecurityKey = { id: crypto.randomUUID(), name: trimmed, addedAt: Date.now() }
-    keys.value = [...keys.value, key]
-    writeKeys(keys.value)
+
+    const optionsResponse = await authFetch('/api/admin/webauthn/register/options', { method: 'POST' })
+    if (!optionsResponse.ok) throw new Error('Failed to start registration.')
+    const options = (await optionsResponse.json()) as PublicKeyCredentialCreationOptionsJSON
+
+    const registrationJSON = await createRegistration(options)
+
+    const verifyResponse = await authFetch(
+      `/api/admin/webauthn/register/verify?label=${encodeURIComponent(trimmed)}`,
+      { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: registrationJSON },
+    )
+    if (!verifyResponse.ok) throw new Error('Failed to register security key.')
+
+    await refresh()
   }
 
-  function removeKey(id: string) {
+  async function removeKey(id: string) {
+    const response = await authFetch(`/api/admin/webauthn/credentials/${id}`, { method: 'DELETE' })
+    if (!response.ok) throw new Error('Failed to remove security key.')
     keys.value = keys.value.filter((key) => key.id !== id)
-    writeKeys(keys.value)
   }
 
-  return { keys, addKey, removeKey }
+  return { keys, loading, refresh, registerKey, removeKey }
 }

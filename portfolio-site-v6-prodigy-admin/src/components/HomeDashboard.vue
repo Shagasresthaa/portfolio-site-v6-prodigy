@@ -1,20 +1,11 @@
 <template>
   <AuthGate>
     <div class="mx-auto w-full max-w-4xl px-4 py-16 font-salsa">
-      <div class="mb-8 flex items-center justify-between">
-        <div>
-          <h1 class="text-3xl">Welcome back, {{ authStore.username }}</h1>
-          <p class="text-ink-muted text-sm">
-            Manage the content shown on the public site's home page.
-          </p>
-        </div>
-        <button
-          type="button"
-          class="border-ink-muted/30 hover:bg-surface-muted rounded-lg border px-4 py-2 text-sm whitespace-nowrap transition"
-          @click="handleLogout"
-        >
-          Log out
-        </button>
+      <div class="mb-8">
+        <h1 class="text-3xl">Welcome back, {{ authStore.username }}</h1>
+        <p class="text-ink-muted text-sm">
+          Manage the content shown on the public site's home page.
+        </p>
       </div>
 
       <p v-if="loading" class="text-ink-muted text-center">Loading…</p>
@@ -262,8 +253,4 @@ async function handleReset() {
   }
 }
 
-function handleLogout() {
-  authStore.logout()
-  window.location.href = '/'
-}
 </script>

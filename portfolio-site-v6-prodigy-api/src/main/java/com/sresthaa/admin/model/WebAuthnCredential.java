@@ -29,6 +29,10 @@ public class WebAuthnCredential {
 	@JoinColumn(name = "admin_account_id", nullable = false)
 	private AdminAccount adminAccount;
 
+	// Identifies the authenticator model, not a secret - needed to reconstruct AttestedCredentialData for verification
+	@Column(nullable = false)
+	private byte[] aaguid;
+
 	@Column(name = "credential_id", nullable = false, unique = true)
 	private byte[] credentialId;
 
@@ -56,9 +60,10 @@ public class WebAuthnCredential {
 	protected WebAuthnCredential() {
 	}
 
-	public WebAuthnCredential(AdminAccount adminAccount, byte[] credentialId, byte[] publicKeyCose,
+	public WebAuthnCredential(AdminAccount adminAccount, byte[] aaguid, byte[] credentialId, byte[] publicKeyCose,
 			long signatureCount, String transports, String label) {
 		this.adminAccount = adminAccount;
+		this.aaguid = aaguid;
 		this.credentialId = credentialId;
 		this.publicKeyCose = publicKeyCose;
 		this.signatureCount = signatureCount;
@@ -72,6 +77,10 @@ public class WebAuthnCredential {
 
 	public AdminAccount getAdminAccount() {
 		return adminAccount;
+	}
+
+	public byte[] getAaguid() {
+		return aaguid;
 	}
 
 	public byte[] getCredentialId() {

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { getApiBaseUrl } from '@/utils/apiBaseUrl'
 import { decodeJwtExpiryMs } from '@/utils/jwt'
+import { assertSecurityKey } from '@/composables/useWebAuthn'
 
 const STORAGE_KEY = 'admin-session'
 const PASSWORD_OVERRIDE_KEY = 'admin-password-override'
@@ -24,6 +25,12 @@ function getExpectedPassword(): string {
   return import.meta.env.PUBLIC_ADMIN_PASSWORD || 'admin'
 }
 
+interface LoginResponseBody {
+  status: 'OK' | 'WEBAUTHN_REQUIRED'
+  token: string | null
+  webAuthnOptions: string | null
+}
+
 async function apiLogin(username: string, password: string): Promise<Session> {
   const response = await fetch(`${getApiBaseUrl()}/api/admin/auth/login`, {
     method: 'POST',
@@ -35,13 +42,35 @@ async function apiLogin(username: string, password: string): Promise<Session> {
     throw new Error('Incorrect username or password.')
   }
   if (response.status === 501) {
-    throw new Error('Second-factor login is not built yet - the bypass override must be enabled in the database.')
+    throw new Error('No security key registered and the bypass override is disabled - enable it in the database.')
   }
   if (!response.ok) {
     throw new Error('Failed to sign in.')
   }
 
-  const { token } = (await response.json()) as { token: string }
+  const body = (await response.json()) as LoginResponseBody
+
+  if (body.status === 'OK') {
+    return { username, token: body.token!, expiresAt: decodeJwtExpiryMs(body.token!) }
+  }
+
+  // WEBAUTHN_REQUIRED - webAuthnOptions is itself a JSON string (the API's `String` return
+  // type from the webauthn4j ceremony, nested as one field of this response's own JSON).
+  const options = JSON.parse(body.webAuthnOptions!) as PublicKeyCredentialRequestOptionsJSON
+  const assertionJSON = await assertSecurityKey(options)
+
+  const verifyResponse = await fetch(
+    `${getApiBaseUrl()}/api/admin/auth/webauthn/verify?username=${encodeURIComponent(username)}`,
+    { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: assertionJSON },
+  )
+  if (verifyResponse.status === 401) {
+    throw new Error('Security key verification failed.')
+  }
+  if (!verifyResponse.ok) {
+    throw new Error('Failed to sign in.')
+  }
+
+  const { token } = (await verifyResponse.json()) as { token: string }
   return { username, token, expiresAt: decodeJwtExpiryMs(token) }
 }
 

@@ -44,6 +44,17 @@
             <MoonIcon v-else class="size-5" aria-hidden="true" />
           </button>
 
+          <div class="bg-ink-muted/20 mx-1 hidden h-5 w-px md:block" />
+
+          <button
+            type="button"
+            class="text-ink-muted hover:bg-danger/10 hover:text-danger focus-visible:bg-danger/10 focus-visible:text-danger relative hidden rounded-full p-2 transition-colors focus-visible:outline-none md:block"
+            @click="handleLogout"
+          >
+            <span class="sr-only">Sign out</span>
+            <ArrowRightOnRectangleIcon class="size-5" aria-hidden="true" />
+          </button>
+
           <DisclosureButton
             class="text-ink-muted hover:bg-ink/5 hover:text-ink focus-visible:bg-ink/5 focus-visible:text-ink relative rounded-full p-2 transition-colors focus-visible:outline-none md:hidden"
           >
@@ -71,6 +82,15 @@
           <FontAwesomeIcon :icon="item.icon" class="size-4" aria-hidden="true" />
           <span>{{ item.name }}</span>
         </DisclosureButton>
+        <DisclosureButton
+          as="button"
+          type="button"
+          class="text-ink-muted hover:bg-danger/10 hover:text-danger border-ink-muted/20 mt-1 flex w-full items-center gap-2 rounded-lg border-t px-3 pt-3 pb-2 text-left text-base font-medium transition-colors"
+          @click="handleLogout"
+        >
+          <ArrowRightOnRectangleIcon class="size-4" aria-hidden="true" />
+          <span>Sign out</span>
+        </DisclosureButton>
       </div>
     </DisclosurePanel>
   </Disclosure>
@@ -87,7 +107,7 @@ import {
   watch,
 } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-import { Bars3Icon, MoonIcon, SunIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { ArrowRightOnRectangleIcon, Bars3Icon, MoonIcon, SunIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import {
   faEnvelope,
@@ -99,10 +119,17 @@ import {
   faUserGear,
 } from '@fortawesome/free-solid-svg-icons'
 import { useThemeStore } from '@/stores/theme'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps<{ currentPath: string; pageTitle: string }>()
 
 const themeStore = useThemeStore()
+const authStore = useAuthStore()
+
+function handleLogout() {
+  authStore.logout()
+  window.location.href = '/'
+}
 
 const navigation = [
   { name: 'Home', href: '/home', icon: faHouse },

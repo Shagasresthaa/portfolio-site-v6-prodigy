@@ -47,11 +47,12 @@ class AdminAuthEntitiesRepositoryTest {
 	@Test
 	void persistsWebAuthnCredentialWithBinaryFields() {
 		AdminAccount account = adminAccountRepository.save(new AdminAccount("admin-webauthn", "hashed-password"));
+		byte[] aaguid = new byte[16];
 		byte[] credentialId = { 1, 2, 3, 4, 5 };
 		byte[] publicKey = { 10, 20, 30 };
 
 		webAuthnCredentialRepository
-				.save(new WebAuthnCredential(account, credentialId, publicKey, 0L, "usb,nfc", "YubiKey 5C"));
+				.save(new WebAuthnCredential(account, aaguid, credentialId, publicKey, 0L, "usb,nfc", "YubiKey 5C"));
 
 		WebAuthnCredential found = webAuthnCredentialRepository.findByAdminAccountId(account.getId()).get(0);
 

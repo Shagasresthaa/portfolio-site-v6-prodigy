@@ -18,8 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.sresthaa.admin.model.AdminAccount;
 import com.sresthaa.admin.model.SystemOverride;
 import com.sresthaa.admin.model.SystemOverrideKeys;
+import com.sresthaa.admin.model.WebAuthnCredential;
 import com.sresthaa.admin.repository.AdminAccountRepository;
 import com.sresthaa.admin.repository.SystemOverrideRepository;
+import com.sresthaa.admin.repository.WebAuthnCredentialRepository;
+import com.sresthaa.admin.webauthn.WebAuthnChallengeStore;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -36,11 +39,23 @@ class AuthControllerTest {
 	private SystemOverrideRepository systemOverrideRepository;
 
 	@Autowired
+	private WebAuthnCredentialRepository webAuthnCredentialRepository;
+
+	@Autowired
 	private PasswordEncoder passwordEncoder;
+
+	// In-memory singleton bean - @Transactional only rolls back the DB, so stale challenges from
+	// a previous test method (same username, every test here) would otherwise leak across tests.
+	@Autowired
+	private WebAuthnChallengeStore challengeStore;
+
+	private AdminAccount account;
 
 	@BeforeEach
 	void createAccount() {
-		adminAccountRepository.save(new AdminAccount("test-admin", passwordEncoder.encode("correct-horse")));
+		account = adminAccountRepository.save(new AdminAccount("test-admin", passwordEncoder.encode("correct-horse")));
+		challengeStore.consumeRegistrationChallenge("test-admin");
+		challengeStore.consumeAuthenticationChallenge("test-admin");
 	}
 
 	@Test
@@ -76,5 +91,29 @@ class AuthControllerTest {
 	void protectedAdminPathRejectsMissingToken() throws Exception {
 		mockMvc.perform(get("/api/admin/does-not-exist-yet"))
 				.andExpect(status().is4xxClientError());
+	}
+
+	@Test
+	void respondsWebAuthnRequiredWhenAccountHasCredentialAndNoBypass() throws Exception {
+		systemOverrideRepository.deleteById(SystemOverrideKeys.BYPASS_SECOND_FACTOR);
+		webAuthnCredentialRepository.save(new WebAuthnCredential(account, new byte[16], new byte[] { 1, 2, 3 },
+				new byte[] { 4, 5, 6 }, 0L, null, "Test Key"));
+
+		mockMvc.perform(post("/api/admin/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"username\":\"test-admin\",\"password\":\"correct-horse\"}"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("WEBAUTHN_REQUIRED"))
+				.andExpect(jsonPath("$.webAuthnOptions").isNotEmpty())
+				.andExpect(jsonPath("$.token").doesNotExist());
+	}
+
+	@Test
+	void webAuthnVerifyRejectsWithoutPendingChallenge() throws Exception {
+		mockMvc.perform(post("/api/admin/auth/webauthn/verify")
+				.param("username", "test-admin")
+				.contentType(MediaType.TEXT_PLAIN)
+				.content("{}"))
+				.andExpect(status().isUnauthorized());
 	}
 }
