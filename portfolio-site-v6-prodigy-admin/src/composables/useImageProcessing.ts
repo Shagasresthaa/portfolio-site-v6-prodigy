@@ -35,19 +35,6 @@ function canvasToWebpBlob(canvas: HTMLCanvasElement, quality: number): Promise<B
   })
 }
 
-function canvasToWebpDataUrl(canvas: HTMLCanvasElement, quality: number): Promise<string> {
-  return new Promise((resolve, reject) => {
-    canvasToWebpBlob(canvas, quality)
-      .then((blob) => {
-        const reader = new FileReader()
-        reader.onloadend = () => resolve(reader.result as string)
-        reader.onerror = () => reject(new Error('Failed to read encoded image.'))
-        reader.readAsDataURL(blob)
-      })
-      .catch(reject)
-  })
-}
-
 /**
  * Converts a single uploaded image into the two sizes HighlightItem needs
  * (src/types/highlight.ts) - a full-size version for the modal and a smaller
@@ -75,17 +62,18 @@ export async function processImageUpload(file: File): Promise<ProcessedImage> {
 /**
  * Same conversion, but for entities with only one image field (Project -
  * see src/types/project.ts, which has no separate thumbnail) - full-size,
- * re-encoded as WebP, nothing else. Still returns a data URL: Projects has no
- * real upload endpoint yet, so this is still the localStorage-mock path.
+ * re-encoded as WebP, nothing else. Returns a Blob (not a data URL) since this
+ * gets uploaded to the real image-upload endpoint - build an object URL via
+ * URL.createObjectURL for local preview.
  */
-export async function processSingleImageUpload(file: File): Promise<string> {
+export async function processSingleImageUpload(file: File): Promise<Blob> {
   if (!file.type.startsWith('image/')) {
     throw new Error('Please choose an image file.')
   }
 
   const bitmap = await createImageBitmap(file)
   try {
-    return await canvasToWebpDataUrl(resizeToCanvas(bitmap, FULL_MAX_DIMENSION), FULL_QUALITY)
+    return await canvasToWebpBlob(resizeToCanvas(bitmap, FULL_MAX_DIMENSION), FULL_QUALITY)
   } finally {
     bitmap.close()
   }

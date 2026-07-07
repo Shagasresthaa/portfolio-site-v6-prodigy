@@ -143,15 +143,18 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faChevronLeft, faChevronRight, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useCachedResource } from '@/composables/useCachedResource'
 import { useUniformCardHeight } from '@/composables/useUniformCardHeight'
+import { getApiBaseUrl } from '@/utils/apiBaseUrl'
 import ProjectCard from './ProjectCard.vue'
 import TagFilterPopover from './TagFilterPopover.vue'
 import type { Project } from '@/types/project'
 
-interface ProjectsContent {
-  projects: Project[]
-}
-
-const { data: projectsContent } = useCachedResource<ProjectsContent>('projects-content', '/data/projects.json')
+// Cache key changed (was "projects-content") since the old mock's cached shape
+// ({ projects: [...] }) doesn't match the real API's plain-array response - reusing the old
+// key would read a stale, wrongly-shaped cache back as if it were the new format.
+const { data: projectsContent } = useCachedResource<Project[]>(
+  'projects-content-v2',
+  `${getApiBaseUrl()}/api/projects`,
+)
 
 const ITEMS_PER_PAGE = 12
 const MIN_SEARCH_LENGTH = 2
@@ -200,7 +203,7 @@ function clearAllFilters() {
 }
 
 const sortedProjects = computed(() => {
-  const projects = projectsContent.value?.projects ?? []
+  const projects = projectsContent.value ?? []
   return [...projects].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
 })
 

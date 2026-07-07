@@ -155,8 +155,8 @@
             <p v-if="processingImage" class="text-ink-muted mt-2 text-sm">Processing image…</p>
             <p v-if="imageError" class="text-danger mt-2 text-sm">{{ imageError }}</p>
             <img
-              v-if="imagePreview"
-              :src="imagePreview"
+              v-if="imagePreviewUrl"
+              :src="imagePreviewUrl"
               alt="Preview"
               class="border-ink-muted/30 mt-4 h-32 w-auto rounded border object-cover"
             />
@@ -372,8 +372,9 @@ import {
 } from '@heroicons/vue/24/outline'
 import { PlayCircleIcon } from '@heroicons/vue/24/solid'
 import AuthGate from '@/components/AuthGate.vue'
-import { deleteProject, loadProjects, upsertProject } from '@/composables/useProjects'
+import { createProject, deleteProject, loadProjects, updateProject } from '@/composables/useProjects'
 import { processSingleImageUpload } from '@/composables/useImageProcessing'
+import { uploadImage } from '@/composables/useImageUpload'
 import type {
   AffiliationType,
   CollabMode,
@@ -442,11 +443,21 @@ const form = reactive({
   mediaType: 'IMAGE' as ProjectMediaType,
   videoUrl: '',
 })
-const imagePreview = ref<string | null>(null)
+// The URL actually rendered in <img :src>. Either the real, already-uploaded URL (editing
+// an existing project, image untouched) or a local object URL for a freshly-chosen file, in
+// which case pendingImageBlob is also set and gets uploaded on save.
+const imagePreviewUrl = ref<string | null>(null)
+const pendingImageBlob = ref<Blob | null>(null)
 const processingImage = ref(false)
 const imageError = ref<string | null>(null)
 const saving = ref(false)
 const saveError = ref<string | null>(null)
+
+function revokePendingObjectUrl() {
+  if (pendingImageBlob.value && imagePreviewUrl.value) {
+    URL.revokeObjectURL(imagePreviewUrl.value)
+  }
+}
 
 const shouldShowEndDate = computed(() => form.statusFlag !== 'PLANNING')
 const isEndDateRequired = computed(
@@ -497,7 +508,9 @@ function resetForm() {
   form.liveUrl = ''
   form.mediaType = 'IMAGE'
   form.videoUrl = ''
-  imagePreview.value = null
+  revokePendingObjectUrl()
+  imagePreviewUrl.value = null
+  pendingImageBlob.value = null
   imageError.value = null
   saveError.value = null
 }
@@ -525,7 +538,8 @@ function openEditForm(project: Project) {
   form.liveUrl = project.liveUrl ?? ''
   form.mediaType = project.mediaType ?? 'IMAGE'
   form.videoUrl = project.videoUrl ?? ''
-  imagePreview.value = project.image ?? null
+  pendingImageBlob.value = null
+  imagePreviewUrl.value = project.image ?? null
   imageError.value = null
   saveError.value = null
   view.value = 'form'
@@ -538,7 +552,10 @@ async function handleFileChange(event: Event) {
   processingImage.value = true
   imageError.value = null
   try {
-    imagePreview.value = await processSingleImageUpload(file)
+    const blob = await processSingleImageUpload(file)
+    revokePendingObjectUrl()
+    pendingImageBlob.value = blob
+    imagePreviewUrl.value = URL.createObjectURL(blob)
   } catch (err) {
     imageError.value = err instanceof Error ? err.message : 'Failed to process image.'
   } finally {
@@ -548,8 +565,12 @@ async function handleFileChange(event: Event) {
 
 async function handleDelete(project: Project) {
   if (!confirm(`Delete "${project.name}"?`)) return
-  deleteProject(project.id)
-  await refreshList()
+  try {
+    await deleteProject(project.id)
+    await refreshList()
+  } catch (err) {
+    loadError.value = err instanceof Error ? err.message : 'Failed to delete project.'
+  }
 }
 
 async function handleSave() {
@@ -567,7 +588,7 @@ async function handleSave() {
     saveError.value = 'End date is required for completed/archived projects.'
     return
   }
-  if (form.mediaType === 'IMAGE' && !imagePreview.value) {
+  if (form.mediaType === 'IMAGE' && !imagePreviewUrl.value) {
     saveError.value = 'Please upload a project image.'
     return
   }
@@ -578,10 +599,24 @@ async function handleSave() {
 
   saving.value = true
   try {
-    const id = editingId.value ?? crypto.randomUUID()
+    let image: string | undefined
 
-    const project: Project = {
-      id,
+    if (form.mediaType === 'IMAGE') {
+      if (pendingImageBlob.value) {
+        // A new file was chosen this session - upload it, then drop the local preview
+        // (revoking its object URL) now that the real URL is known.
+        image = await uploadImage(pendingImageBlob.value, 'projects')
+        revokePendingObjectUrl()
+        pendingImageBlob.value = null
+        imagePreviewUrl.value = image
+      } else {
+        // Editing an existing project without touching its image - reuse the real URL
+        // already shown in the preview.
+        image = imagePreviewUrl.value!
+      }
+    }
+
+    const payload: Omit<Project, 'id'> = {
       name: form.name.trim(),
       shortDesc: form.shortDesc.trim(),
       longDesc: form.longDesc.trim() || undefined,
@@ -596,16 +631,19 @@ async function handleSave() {
       projectUrl: form.projectUrl.trim() || undefined,
       liveUrl: form.liveUrl.trim() || undefined,
       mediaType: form.mediaType,
-      ...(form.mediaType === 'IMAGE'
-        ? { image: imagePreview.value ?? undefined }
-        : { videoUrl: form.videoUrl.trim() }),
+      ...(form.mediaType === 'IMAGE' ? { image } : { videoUrl: form.videoUrl.trim() }),
     }
 
-    upsertProject(project)
+    if (editingId.value) {
+      await updateProject(editingId.value, payload)
+    } else {
+      await createProject(payload)
+    }
+
     await refreshList()
     view.value = 'list'
   } catch (err) {
-    saveError.value = err instanceof Error ? err.message : 'Failed to save - local storage may be full.'
+    saveError.value = err instanceof Error ? err.message : 'Failed to save project.'
   } finally {
     saving.value = false
   }
