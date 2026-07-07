@@ -1,0 +1,10 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import NavbarComponent from '../../components/NavbarComponent.vue';
+import BlogImagesManager from '../../components/BlogImagesManager.vue';
+---
+
+<Layout title="Blog Images">
+	<NavbarComponent client:load currentPath={Astro.url.pathname} pageTitle="Blog Images" />
+	<BlogImagesManager client:only="vue" />
+</Layout>

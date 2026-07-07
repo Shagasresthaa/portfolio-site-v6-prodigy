@@ -8,7 +8,7 @@
       <span>Back to Blog</span>
     </RouterLink>
 
-    <template v-if="blogContent">
+    <template v-if="!loading">
       <article
         v-if="post"
         class="border-ink-muted/20 bg-surface-muted/75 mx-auto max-w-4xl rounded-2xl border p-8 shadow-xl backdrop-blur-md"
@@ -104,11 +104,14 @@
               class="border-ink-muted/30 bg-surface-muted focus:border-(--color-primary) w-full rounded border p-3 text-sm placeholder:text-ink-muted/70 focus:outline-none"
             />
 
+            <p v-if="commentError" class="text-danger text-sm">{{ commentError }}</p>
+
             <button
               type="submit"
-              class="bg-secondary text-secondary-contrast self-start rounded-lg px-6 py-2 text-sm transition hover:opacity-90"
+              :disabled="submittingComment"
+              class="bg-secondary text-secondary-contrast self-start rounded-lg px-6 py-2 text-sm transition hover:opacity-90 disabled:opacity-60"
             >
-              Post Comment
+              {{ submittingComment ? 'Posting…' : 'Post Comment' }}
             </button>
           </form>
 
@@ -156,21 +159,22 @@ import { useBlogReactions } from '@/composables/useBlogReactions'
 import { useBlogComments } from '@/composables/useBlogComments'
 import { useDocumentMeta, type DocumentMeta } from '@/composables/useDocumentMeta'
 import { useShare } from '@/composables/useShare'
+import { getApiBaseUrl } from '@/utils/apiBaseUrl'
 import { renderMarkdown } from '@/utils/markdown'
 import type { BlogPost } from '@/types/blog'
 
-interface BlogContent {
-  posts: BlogPost[]
-}
-
 const route = useRoute()
-const { data: blogContent } = useCachedResource<BlogContent>('blog-content', '/data/blog.json')
 
-const post = computed<BlogPost | null>(() => {
-  const slug = route.params.slug
-  const found = blogContent.value?.posts.find((p) => p.slug === slug)
-  return found && found.published ? found : null
-})
+// Safe to read once (not reactively) - BlogPostView keys this component on the slug param,
+// so a different post is a full remount, not a param update.
+const slug = typeof route.params.slug === 'string' ? route.params.slug : ''
+
+// The API 404s an unpublished/nonexistent slug, so a null `post` once loading finishes
+// (no `error`-specific handling needed) is what renders as "not found" below.
+const { data: post, loading } = useCachedResource<BlogPost>(
+  `blog-post-${slug}`,
+  `${getApiBaseUrl()}/api/blog/${slug}`,
+)
 
 const tags = computed(() =>
   (post.value?.tags ?? '')
@@ -201,10 +205,6 @@ const documentMeta = computed<DocumentMeta | null>(() => {
 })
 useDocumentMeta(documentMeta)
 
-// Safe to read once (not reactively) - BlogPostView keys this component on
-// the slug param, so a different post is a full remount, not a param update.
-const slug = typeof route.params.slug === 'string' ? route.params.slug : ''
-
 const { vote, likeCount, dislikeCount, toggleLike, toggleDislike } = useBlogReactions(
   slug,
   () => post.value?.likeCount ?? 0,
@@ -224,14 +224,25 @@ function handleShare() {
 const postAnonymously = ref(false)
 const commentName = ref('')
 const commentContent = ref('')
+const submittingComment = ref(false)
+const commentError = ref<string | null>(null)
 
-function handleCommentSubmit() {
+async function handleCommentSubmit() {
   const content = commentContent.value.trim()
   if (!content) return
-  addComment(postAnonymously.value ? undefined : commentName.value.trim() || undefined, content)
-  commentName.value = ''
-  commentContent.value = ''
-  postAnonymously.value = false
+
+  submittingComment.value = true
+  commentError.value = null
+  try {
+    await addComment(postAnonymously.value ? undefined : commentName.value.trim() || undefined, content)
+    commentName.value = ''
+    commentContent.value = ''
+    postAnonymously.value = false
+  } catch (err) {
+    commentError.value = err instanceof Error ? err.message : 'Failed to post comment.'
+  } finally {
+    submittingComment.value = false
+  }
 }
 
 function formatCommentDate(iso: string): string {

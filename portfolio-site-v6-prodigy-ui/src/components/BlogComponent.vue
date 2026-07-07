@@ -136,15 +136,15 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faChevronLeft, faChevronRight, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useCachedResource } from '@/composables/useCachedResource'
 import { useUniformCardHeight } from '@/composables/useUniformCardHeight'
+import { getApiBaseUrl } from '@/utils/apiBaseUrl'
 import BlogCard from './BlogCard.vue'
 import TagFilterPopover from './TagFilterPopover.vue'
 import type { BlogPost } from '@/types/blog'
 
-interface BlogContent {
-  posts: BlogPost[]
-}
-
-const { data: blogContent } = useCachedResource<BlogContent>('blog-content', '/data/blog.json')
+// Cache key changed (was "blog-content") since the old mock's cached shape
+// ({ posts: [...] }) doesn't match the real API's plain-array response - reusing the old
+// key would read a stale, wrongly-shaped cache back as if it were the new format.
+const { data: blogContent } = useCachedResource<BlogPost[]>('blog-content-v2', `${getApiBaseUrl()}/api/blog`)
 
 const ITEMS_PER_PAGE = 12
 const MIN_SEARCH_LENGTH = 2
@@ -193,10 +193,8 @@ function clearAllFilters() {
 }
 
 const publishedPosts = computed(() => {
-  const posts = blogContent.value?.posts ?? []
-  return posts
-    .filter((post) => post.published)
-    .sort((a, b) => new Date(b.publishedAt ?? 0).getTime() - new Date(a.publishedAt ?? 0).getTime())
+  const posts = blogContent.value ?? []
+  return [...posts].sort((a, b) => new Date(b.publishedAt ?? 0).getTime() - new Date(a.publishedAt ?? 0).getTime())
 })
 
 const allTags = computed(() => {

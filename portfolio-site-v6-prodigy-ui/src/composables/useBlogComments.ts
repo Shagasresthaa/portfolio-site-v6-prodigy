@@ -1,36 +1,38 @@
 import { ref } from 'vue'
+import { getApiBaseUrl } from '@/utils/apiBaseUrl'
 import type { BlogComment } from '@/types/blog'
 
-const STORAGE_PREFIX = 'blog-comments-'
-
-function readComments(slug: string): BlogComment[] {
-  const raw = localStorage.getItem(STORAGE_PREFIX + slug)
-  if (!raw) return []
-  try {
-    return JSON.parse(raw) as BlogComment[]
-  } catch {
-    return []
-  }
-}
-
-/**
- * Comments are mocked locally - there's no backend yet (see CLAUDE.md).
- * Persisted per browser in localStorage, newest first, same ordering as the
- * old site.
- */
 export function useBlogComments(slug: string) {
-  const comments = ref<BlogComment[]>(readComments(slug))
+  const comments = ref<BlogComment[]>([])
+  const loading = ref(true)
+  const error = ref<string | null>(null)
 
-  function addComment(name: string | undefined, content: string) {
-    const comment: BlogComment = {
-      id: crypto.randomUUID(),
-      name: name || undefined,
-      content,
-      createdAt: new Date().toISOString(),
+  async function refresh() {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/blog/${slug}/comments`)
+      if (!response.ok) throw new Error(`Failed to fetch comments: ${response.status}`)
+      comments.value = (await response.json()) as BlogComment[]
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to load comments.'
+    } finally {
+      loading.value = false
     }
-    comments.value = [comment, ...comments.value]
-    localStorage.setItem(STORAGE_PREFIX + slug, JSON.stringify(comments.value))
   }
 
-  return { comments, addComment }
+  void refresh()
+
+  async function addComment(name: string | undefined, content: string) {
+    const response = await fetch(`${getApiBaseUrl()}/api/blog/${slug}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, content }),
+    })
+    if (!response.ok) throw new Error('Failed to post comment.')
+    const comment = (await response.json()) as BlogComment
+    comments.value = [comment, ...comments.value]
+  }
+
+  return { comments, loading, error, addComment }
 }

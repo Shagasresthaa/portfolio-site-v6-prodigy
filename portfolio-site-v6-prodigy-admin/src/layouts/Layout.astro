@@ -21,7 +21,9 @@ const csp = [
 	"script-src 'self' 'sha256-SaCkFfPruIdTXT8/97JArQmGxiJAL2o4bBDvSgJ5y3Q=' 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-eIXWvAmxkr251LJZkjniEK5LcPF3NkapbJepohwYRIc='",
 	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 	"font-src 'self' https://fonts.gstatic.com",
-	"img-src 'self' data: https://img.youtube.com",
+	// *.r2.dev is Cloudflare R2's public dev domain (see r2.public-base-url in the API's
+	// application-local.properties) - swap/extend this if a custom domain replaces it later.
+	"img-src 'self' data: https://img.youtube.com https://*.r2.dev",
 	`connect-src 'self' ${getApiBaseUrl()}`,
 	"object-src 'none'",
 	"base-uri 'self'",

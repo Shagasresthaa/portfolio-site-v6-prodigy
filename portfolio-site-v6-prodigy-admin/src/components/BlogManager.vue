@@ -5,14 +5,23 @@
       <template v-if="view === 'list'">
         <div class="mb-8 flex items-center justify-between">
           <h1 class="text-3xl">Blog</h1>
-          <button
-            type="button"
-            class="bg-primary text-primary-contrast flex items-center gap-2 rounded-lg px-4 py-2 transition hover:opacity-90"
-            @click="openNewForm"
-          >
-            <PlusIcon class="size-4" aria-hidden="true" />
-            New Post
-          </button>
+          <div class="flex items-center gap-3">
+            <a
+              href="/blog/images"
+              class="border-ink-muted/30 hover:bg-surface flex items-center gap-2 rounded-lg border px-4 py-2 transition"
+            >
+              <PhotoIcon class="size-4" aria-hidden="true" />
+              Manage Images
+            </a>
+            <button
+              type="button"
+              class="bg-primary text-primary-contrast flex items-center gap-2 rounded-lg px-4 py-2 transition hover:opacity-90"
+              @click="openNewForm"
+            >
+              <PlusIcon class="size-4" aria-hidden="true" />
+              New Post
+            </button>
+          </div>
         </div>
 
         <p v-if="loading" class="text-ink-muted text-center">Loading…</p>
@@ -176,7 +185,9 @@
 
           <div>
             <label class="mb-2 block text-sm font-semibold">Content (Markdown) *</label>
+            <BlogImagePicker class="mb-3" @select="handleInsertImage" />
             <MdEditor
+              ref="editorRef"
               v-model="form.content"
               :theme="themeStore.theme"
               language="en-US"
@@ -247,19 +258,24 @@ import {
   EyeIcon,
   EyeSlashIcon,
   PencilIcon,
+  PhotoIcon,
   PlusIcon,
   TrashIcon,
 } from '@heroicons/vue/24/outline'
-import { MdEditor } from 'md-editor-v3'
+import { MdEditor, type ExposeParam } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 import DOMPurify from 'dompurify'
 import AuthGate from '@/components/AuthGate.vue'
-import { deleteBlogPost, loadBlogPosts, upsertBlogPost } from '@/composables/useBlogPosts'
+import BlogImagePicker from '@/components/BlogImagePicker.vue'
+import { createBlogPost, deleteBlogPost, loadBlogPosts, updateBlogPost } from '@/composables/useBlogPosts'
 import { processSingleImageUpload } from '@/composables/useImageProcessing'
+import { uploadImage } from '@/composables/useImageUpload'
 import { useThemeStore } from '@/stores/theme'
 import type { BlogPost } from '@/types/blog'
+import type { BlogImage } from '@/types/blogImage'
 
 const themeStore = useThemeStore()
+const editorRef = ref<ExposeParam | null>(null)
 
 const view = ref<'list' | 'form'>('list')
 const posts = ref<BlogPost[]>([])
@@ -275,24 +291,45 @@ const form = reactive({
   tags: '',
   published: false,
 })
+
+// Inserts the picked image as markdown at the current cursor position (falls back to
+// appending if the editor ref isn't ready for some reason).
+function handleInsertImage(image: BlogImage) {
+  const markdown = `![${image.altText ?? ''}](${image.url})`
+  if (editorRef.value) {
+    editorRef.value.insert(() => ({ targetValue: markdown }))
+  } else {
+    form.content += `\n${markdown}\n`
+  }
+}
+// The URL actually rendered in <img :src>. Either the real, already-uploaded URL (editing
+// an existing post, cover untouched) or a local object URL for a freshly-chosen file, in
+// which case pendingCoverBlob is also set and gets uploaded on save.
 const coverPreview = ref<string | null>(null)
+const pendingCoverBlob = ref<Blob | null>(null)
 const processingImage = ref(false)
 const imageError = ref<string | null>(null)
 const saving = ref(false)
 const saveError = ref<string | null>(null)
 
+function revokePendingCoverObjectUrl() {
+  if (pendingCoverBlob.value && coverPreview.value) {
+    URL.revokeObjectURL(coverPreview.value)
+  }
+}
+
 function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html)
 }
 
-// The editor's paste/drop-to-upload affordance - reuses the same WebP
-// conversion as the cover image upload. No backend to actually host these,
-// so (like every other image field in this admin) it's embedded as a base64
-// data URL directly in the markdown, which is fine for a handful of small
-// inline images but will bloat stored content fast for anything larger.
+// The editor's paste/drop-to-upload affordance - reuses the same WebP conversion as the
+// cover image, uploaded through the same real endpoint so inline post images are hosted
+// URLs rather than base64 bloating the stored markdown content.
 async function handleUploadImg(files: File[], callback: (urls: string[]) => void) {
   try {
-    const urls = await Promise.all(files.map((file) => processSingleImageUpload(file)))
+    const urls = await Promise.all(
+      files.map(async (file) => uploadImage(await processSingleImageUpload(file), 'blog')),
+    )
     callback(urls)
   } catch (err) {
     console.error('Failed to process uploaded image', err)
@@ -328,7 +365,9 @@ function resetForm() {
   form.content = ''
   form.tags = ''
   form.published = false
+  revokePendingCoverObjectUrl()
   coverPreview.value = null
+  pendingCoverBlob.value = null
   imageError.value = null
   saveError.value = null
 }
@@ -347,6 +386,7 @@ function openEditForm(post: BlogPost) {
   form.content = post.content
   form.tags = post.tags
   form.published = post.published
+  pendingCoverBlob.value = null
   coverPreview.value = post.coverImage ?? null
   imageError.value = null
   saveError.value = null
@@ -360,7 +400,10 @@ async function handleCoverFileChange(event: Event) {
   processingImage.value = true
   imageError.value = null
   try {
-    coverPreview.value = await processSingleImageUpload(file)
+    const blob = await processSingleImageUpload(file)
+    revokePendingCoverObjectUrl()
+    pendingCoverBlob.value = blob
+    coverPreview.value = URL.createObjectURL(blob)
   } catch (err) {
     imageError.value = err instanceof Error ? err.message : 'Failed to process image.'
   } finally {
@@ -370,8 +413,12 @@ async function handleCoverFileChange(event: Event) {
 
 async function handleDelete(post: BlogPost) {
   if (!confirm(`Delete "${post.title}"?`)) return
-  deleteBlogPost(post.id)
-  await refreshList()
+  try {
+    await deleteBlogPost(post.id)
+    await refreshList()
+  } catch (err) {
+    loadError.value = err instanceof Error ? err.message : 'Failed to delete post.'
+  }
 }
 
 async function handleSave() {
@@ -384,28 +431,41 @@ async function handleSave() {
 
   saving.value = true
   try {
-    const id = editingId.value ?? crypto.randomUUID()
-    const existing = posts.value.find((post) => post.id === id)
+    let coverImage: string | undefined
 
-    const post: BlogPost = {
-      id,
+    if (pendingCoverBlob.value) {
+      // A new file was chosen this session - upload it, then drop the local preview
+      // (revoking its object URL) now that the real URL is known.
+      coverImage = await uploadImage(pendingCoverBlob.value, 'blog')
+      revokePendingCoverObjectUrl()
+      pendingCoverBlob.value = null
+      coverPreview.value = coverImage
+    } else {
+      // Editing an existing post without touching its cover - reuse the real URL already
+      // shown in the preview (or none, if it never had one).
+      coverImage = coverPreview.value ?? undefined
+    }
+
+    const payload = {
       slug: form.slug.trim(),
       title: form.title.trim(),
       excerpt: form.excerpt.trim(),
       content: form.content,
-      coverImage: coverPreview.value ?? undefined,
+      coverImage,
       tags: form.tags.trim(),
       published: form.published,
-      publishedAt: form.published ? (existing?.publishedAt ?? new Date().toISOString()) : undefined,
-      likeCount: existing?.likeCount ?? 0,
-      dislikeCount: existing?.dislikeCount ?? 0,
     }
 
-    upsertBlogPost(post)
+    if (editingId.value) {
+      await updateBlogPost(editingId.value, payload)
+    } else {
+      await createBlogPost(payload)
+    }
+
     await refreshList()
     view.value = 'list'
   } catch (err) {
-    saveError.value = err instanceof Error ? err.message : 'Failed to save - local storage may be full.'
+    saveError.value = err instanceof Error ? err.message : 'Failed to save post.'
   } finally {
     saving.value = false
   }
