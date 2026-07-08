@@ -23,7 +23,19 @@
         </div>
       </div>
 
-      <p class="font-kalam grow">{{ post.excerpt }}</p>
+      <div class="grow">
+        <p class="font-kalam" :class="!isExpanded && isLongExcerpt ? 'line-clamp-3' : ''">
+          {{ post.excerpt }}
+        </p>
+        <button
+          v-if="isLongExcerpt"
+          type="button"
+          class="text-primary font-salsa mt-1 text-sm hover:opacity-80"
+          @click="isExpanded = !isExpanded"
+        >
+          {{ isExpanded ? 'Read less' : 'Read more' }}
+        </button>
+      </div>
 
       <div class="mt-4 flex flex-wrap gap-2">
         <span v-for="tag in tags" :key="tag" class="font-salsa bg-ink/10 text-ink-muted rounded-full px-2 py-1 text-xs">
@@ -32,7 +44,10 @@
       </div>
 
       <div class="font-salsa mt-4 flex items-center justify-between gap-3 pt-4">
-        <RouterLink :to="`/blog/${post.slug}`" class="text-primary flex items-center gap-2 text-sm hover:opacity-80">
+        <RouterLink
+          :to="`/blog/${post.slug}`"
+          class="bg-secondary text-secondary-contrast flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition hover:opacity-90"
+        >
           Read Post
           <FontAwesomeIcon :icon="faArrowRight" class="size-3" aria-hidden="true" />
         </RouterLink>
@@ -50,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faArrowRight, faCalendar, faCheck, faShareNodes } from '@fortawesome/free-solid-svg-icons'
@@ -60,6 +75,9 @@ import type { BlogPost } from '@/types/blog'
 const props = defineProps<{ post: BlogPost }>()
 
 const { share, justCopied } = useShare()
+
+const isExpanded = ref(false)
+const isLongExcerpt = computed(() => props.post.excerpt.length > 150)
 
 const tags = computed(() =>
   props.post.tags
