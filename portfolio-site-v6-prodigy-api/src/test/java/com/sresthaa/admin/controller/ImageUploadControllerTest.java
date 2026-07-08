@@ -97,4 +97,41 @@ class ImageUploadControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.url").value("https://cdn.example/highlights/generated.webp"));
 	}
+
+	@Test
+	void documentUploadRejectsUnknownCategory() throws Exception {
+		MockMultipartFile file = new MockMultipartFile("file", "resume.pdf", "application/pdf", new byte[] { 1, 2, 3 });
+
+		mockMvc.perform(multipart("/api/admin/uploads/document")
+				.file(file)
+				.param("category", "not-a-real-category")
+				.header("Authorization", "Bearer " + token))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void documentUploadRejectsNonPdfFile() throws Exception {
+		MockMultipartFile file = new MockMultipartFile("file", "resume.docx",
+				"application/vnd.openxmlformats-officedocument.wordprocessingml.document", new byte[] { 1, 2, 3 });
+
+		mockMvc.perform(multipart("/api/admin/uploads/document")
+				.file(file)
+				.param("category", "resume")
+				.header("Authorization", "Bearer " + token))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void documentUploadSucceedsAndReturnsUrl() throws Exception {
+		when(r2StorageService.upload(any(), anyString(), anyString()))
+				.thenReturn("https://cdn.example/resume/generated.pdf");
+		MockMultipartFile file = new MockMultipartFile("file", "resume.pdf", "application/pdf", new byte[] { 1, 2, 3 });
+
+		mockMvc.perform(multipart("/api/admin/uploads/document")
+				.file(file)
+				.param("category", "resume")
+				.header("Authorization", "Bearer " + token))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.url").value("https://cdn.example/resume/generated.pdf"));
+	}
 }

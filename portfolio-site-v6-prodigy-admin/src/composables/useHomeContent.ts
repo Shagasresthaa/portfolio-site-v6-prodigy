@@ -5,6 +5,7 @@ export interface HomeContent {
   aboutHook: string
   aboutStory: string[]
   timeline: TimelineEvent[]
+  resumeUrl: string | null
 }
 
 export async function fetchHomeContent(): Promise<HomeContent> {

@@ -24,7 +24,8 @@ public class R2StorageService {
 	private static final Map<String, String> EXTENSIONS_BY_CONTENT_TYPE = Map.of(
 			"image/webp", ".webp",
 			"image/png", ".png",
-			"image/jpeg", ".jpg");
+			"image/jpeg", ".jpg",
+			"application/pdf", ".pdf");
 
 	private final S3Client s3Client;
 	private final String bucketName;

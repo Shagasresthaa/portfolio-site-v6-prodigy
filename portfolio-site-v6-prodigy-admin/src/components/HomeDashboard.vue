@@ -13,6 +13,41 @@
       <p v-else-if="!draft" class="text-danger text-center">No content loaded.</p>
 
       <form v-else class="flex flex-col gap-8" @submit.prevent="handleSave">
+        <!-- Resume -->
+        <section class="border-ink-muted/20 bg-surface-muted/70 rounded-2xl border p-6">
+          <h2 class="mb-3 text-xl">Resume</h2>
+          <p v-if="draft.resumeUrl" class="text-ink-muted mb-3 text-sm">
+            Current:
+            <a
+              :href="draft.resumeUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-primary underline"
+            >
+              View PDF
+            </a>
+          </p>
+          <p v-else class="text-ink-muted mb-3 text-sm">No resume uploaded yet.</p>
+          <input
+            ref="resumeFileInput"
+            type="file"
+            accept="application/pdf"
+            class="hidden"
+            @change="handleResumeFileChange"
+          />
+          <div class="flex items-center gap-4">
+            <button
+              type="button"
+              class="border-ink-muted/30 hover:bg-surface flex items-center gap-1 rounded-lg border px-3 py-2 text-sm transition disabled:opacity-60"
+              :disabled="uploadingResume"
+              @click="resumeFileInput?.click()"
+            >
+              {{ uploadingResume ? 'Uploading…' : 'Upload new resume' }}
+            </button>
+            <p v-if="resumeUploadError" class="text-danger text-sm">{{ resumeUploadError }}</p>
+          </div>
+        </section>
+
         <!-- About hook -->
         <section class="border-ink-muted/20 bg-surface-muted/70 rounded-2xl border p-6">
           <h2 class="mb-3 text-xl">About hook</h2>
@@ -181,6 +216,7 @@ import { ChevronDownIcon, ChevronUpIcon, PlusIcon, TrashIcon } from '@heroicons/
 import AuthGate from '@/components/AuthGate.vue'
 import { useAuthStore } from '@/stores/auth'
 import { fetchHomeContent, saveHomeContent, type HomeContent } from '@/composables/useHomeContent'
+import { uploadDocument } from '@/composables/useDocumentUpload'
 
 const authStore = useAuthStore()
 
@@ -190,6 +226,10 @@ const loadError = ref<string | null>(null)
 const saving = ref(false)
 const saved = ref(false)
 const saveError = ref<string | null>(null)
+
+const resumeFileInput = ref<HTMLInputElement | null>(null)
+const uploadingResume = ref(false)
+const resumeUploadError = ref<string | null>(null)
 
 onMounted(async () => {
   try {
@@ -204,6 +244,23 @@ onMounted(async () => {
 // Clear the "Saved." message as soon as the draft changes again, so it can't
 // linger and imply an edit is saved when it isn't.
 watch(draft, () => (saved.value = false), { deep: true })
+
+async function handleResumeFileChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file || !draft.value) return
+
+  uploadingResume.value = true
+  resumeUploadError.value = null
+  try {
+    draft.value.resumeUrl = await uploadDocument(file, 'resume')
+  } catch (err) {
+    resumeUploadError.value = err instanceof Error ? err.message : 'Failed to upload resume.'
+  } finally {
+    uploadingResume.value = false
+    input.value = ''
+  }
+}
 
 function move<T>(list: T[], index: number, offset: number) {
   const target = index + offset

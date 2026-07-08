@@ -29,13 +29,19 @@ public class HomeContent {
 	@Column(name = "timeline_json", nullable = false, columnDefinition = "TEXT")
 	private String timelineJson;
 
+	// Nullable - unlike the other fields, there's a real gap between "site launched" and "admin
+	// has uploaded a resume", and the public UI just hides the resume link until this is set.
+	@Column(name = "resume_url")
+	private String resumeUrl;
+
 	protected HomeContent() {
 	}
 
-	public HomeContent(String aboutHook, String aboutStoryJson, String timelineJson) {
+	public HomeContent(String aboutHook, String aboutStoryJson, String timelineJson, String resumeUrl) {
 		this.aboutHook = aboutHook;
 		this.aboutStoryJson = aboutStoryJson;
 		this.timelineJson = timelineJson;
+		this.resumeUrl = resumeUrl;
 	}
 
 	public UUID getId() {
@@ -64,5 +70,13 @@ public class HomeContent {
 
 	public void setTimelineJson(String timelineJson) {
 		this.timelineJson = timelineJson;
+	}
+
+	public String getResumeUrl() {
+		return resumeUrl;
+	}
+
+	public void setResumeUrl(String resumeUrl) {
+		this.resumeUrl = resumeUrl;
 	}
 }

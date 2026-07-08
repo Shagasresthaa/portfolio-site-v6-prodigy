@@ -95,6 +95,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faAward, faChevronDown, faFilePdf } from '@fortawesome/free-solid-svg-icons'
 import { faGithub, faLinkedin, faSquareGitlab, faSteam } from '@fortawesome/free-brands-svg-icons'
@@ -107,42 +108,46 @@ interface HomeContent {
   aboutHook: string
   aboutStory: string[]
   timeline: TimelineEvent[]
+  resumeUrl: string | null
 }
 
-const { data: homeContent } = useCachedResource<HomeContent>('home-content', `${getApiBaseUrl()}/api/home`)
+const { data: homeContent } = useCachedResource<HomeContent>('home-content-v2', `${getApiBaseUrl()}/api/home`)
 
-const socialLinks = [
-  {
-    href: 'https://www.linkedin.com/in/sresthaa-shaga/',
-    icon: faLinkedin,
-    label: 'LinkedIn',
-  },
-  {
-    href: 'https://github.com/Shagasresthaa',
-    icon: faGithub,
-    label: 'GitHub',
-  },
-  {
-    href: 'https://gitlab.com/sresthaa-shaga',
-    icon: faSquareGitlab,
-    label: 'GitLab',
-  },
-  {
-    href: 'https://drive.google.com/file/d/13PJt4xrrdotOcVET3wA536C4uIQ-rJI0/view?usp=sharing',
-    icon: faFilePdf,
-    label: 'Resume',
-  },
-  {
-    href: 'https://drive.google.com/drive/folders/1bs98W8ON9Rfk_zj_zmxD6dYAP14xQQht?usp=sharing',
-    icon: faAward,
-    label: 'Awards',
-  },
-  {
-    href: 'https://steamcommunity.com/id/SentinelNS_05/',
-    icon: faSteam,
-    label: 'Steam',
-  },
-]
+// Resume is omitted entirely (rather than linking somewhere broken) until one's been uploaded
+// via the admin's Home dashboard.
+const socialLinks = computed(() => {
+  const links = [
+    {
+      href: 'https://www.linkedin.com/in/sresthaa-shaga/',
+      icon: faLinkedin,
+      label: 'LinkedIn',
+    },
+    {
+      href: 'https://github.com/Shagasresthaa',
+      icon: faGithub,
+      label: 'GitHub',
+    },
+    {
+      href: 'https://gitlab.com/sresthaa-shaga',
+      icon: faSquareGitlab,
+      label: 'GitLab',
+    },
+    ...(homeContent.value?.resumeUrl
+      ? [{ href: homeContent.value.resumeUrl, icon: faFilePdf, label: 'Resume' }]
+      : []),
+    {
+      href: 'https://drive.google.com/drive/folders/1bs98W8ON9Rfk_zj_zmxD6dYAP14xQQht?usp=sharing',
+      icon: faAward,
+      label: 'Awards',
+    },
+    {
+      href: 'https://steamcommunity.com/id/SentinelNS_05/',
+      icon: faSteam,
+      label: 'Steam',
+    },
+  ]
+  return links
+})
 
 function scrollToAbout() {
   document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })

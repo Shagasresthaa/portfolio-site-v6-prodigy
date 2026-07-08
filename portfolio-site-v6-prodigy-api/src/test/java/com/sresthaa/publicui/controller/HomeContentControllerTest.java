@@ -103,6 +103,21 @@ class HomeContentControllerTest {
 	}
 
 	@Test
+	void updateAndGetRoundTripResumeUrl() throws Exception {
+		mockMvc.perform(put("/api/admin/home")
+				.header("Authorization", "Bearer " + token)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"aboutHook\":\"Hi\",\"aboutStory\":[],\"timeline\":[],"
+						+ "\"resumeUrl\":\"https://cdn.example/resume/latest.pdf\"}"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.resumeUrl").value("https://cdn.example/resume/latest.pdf"));
+
+		mockMvc.perform(get("/api/home"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.resumeUrl").value("https://cdn.example/resume/latest.pdf"));
+	}
+
+	@Test
 	void updateReplacesRatherThanDuplicatingTheSingletonRow() throws Exception {
 		mockMvc.perform(put("/api/admin/home")
 				.header("Authorization", "Bearer " + token)

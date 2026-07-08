@@ -22,6 +22,8 @@ public class ImageUploadController {
 	// flat pile of files. Add to this set as more content types gain real image uploads.
 	private static final Set<String> ALLOWED_CATEGORIES = Set.of("highlights", "projects", "blog", "settings");
 
+	private static final Set<String> ALLOWED_DOCUMENT_CATEGORIES = Set.of("resume");
+
 	private final R2StorageService r2StorageService;
 
 	public ImageUploadController(R2StorageService r2StorageService) {
@@ -38,6 +40,26 @@ public class ImageUploadController {
 		String contentType = file.getContentType();
 		if (contentType == null || !contentType.startsWith("image/")) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File must be an image");
+		}
+
+		try {
+			String url = r2StorageService.upload(file.getBytes(), contentType, category);
+			return new UploadResponse(url);
+		} catch (IOException e) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to read uploaded file", e);
+		}
+	}
+
+	@PostMapping("/document")
+	public UploadResponse uploadDocument(@RequestParam("file") MultipartFile file,
+			@RequestParam("category") String category) {
+		if (!ALLOWED_DOCUMENT_CATEGORIES.contains(category)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown upload category");
+		}
+
+		String contentType = file.getContentType();
+		if (!"application/pdf".equals(contentType)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File must be a PDF");
 		}
 
 		try {

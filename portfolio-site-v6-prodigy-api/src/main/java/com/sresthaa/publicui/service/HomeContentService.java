@@ -32,7 +32,7 @@ public class HomeContentService {
 	public HomeContentPayload get() {
 		return homeContentRepository.findAll().stream().findFirst()
 				.map(this::toPayload)
-				.orElseGet(() -> new HomeContentPayload("", List.of(), List.of()));
+				.orElseGet(() -> new HomeContentPayload("", List.of(), List.of(), null));
 	}
 
 	public HomeContentPayload update(HomeContentPayload payload) {
@@ -41,18 +41,19 @@ public class HomeContentService {
 		}
 
 		HomeContent content = homeContentRepository.findAll().stream().findFirst()
-				.orElseGet(() -> new HomeContent(null, null, null));
+				.orElseGet(() -> new HomeContent(null, null, null, null));
 
 		content.setAboutHook(payload.aboutHook());
 		content.setAboutStoryJson(writeJson(payload.aboutStory()));
 		content.setTimelineJson(writeJson(payload.timeline()));
+		content.setResumeUrl(payload.resumeUrl());
 
 		return toPayload(homeContentRepository.save(content));
 	}
 
 	private HomeContentPayload toPayload(HomeContent content) {
 		return new HomeContentPayload(content.getAboutHook(), readJson(content.getAboutStoryJson(), STRING_LIST),
-				readJson(content.getTimelineJson(), TIMELINE_LIST));
+				readJson(content.getTimelineJson(), TIMELINE_LIST), content.getResumeUrl());
 	}
 
 	private <T> String writeJson(T value) {
