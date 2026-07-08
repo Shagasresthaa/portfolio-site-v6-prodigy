@@ -46,7 +46,7 @@
 
       <button
         type="button"
-        class="group absolute bottom-8 animate-bounce"
+        class="group absolute bottom-8 hidden animate-bounce md:block"
         aria-label="Scroll to About section"
         @click="scrollToAbout"
       >
