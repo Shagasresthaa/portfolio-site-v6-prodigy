@@ -20,7 +20,7 @@ public class ImageUploadController {
 
 	// Bucket key prefix, one per content type that uploads images - keeps R2 from becoming one
 	// flat pile of files. Add to this set as more content types gain real image uploads.
-	private static final Set<String> ALLOWED_CATEGORIES = Set.of("highlights", "projects", "blog", "settings");
+	private static final Set<String> ALLOWED_CATEGORIES = Set.of("highlights", "projects", "blog", "settings", "certs");
 
 	private static final Set<String> ALLOWED_DOCUMENT_CATEGORIES = Set.of("resume");
 

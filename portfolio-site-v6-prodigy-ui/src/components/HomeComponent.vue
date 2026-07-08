@@ -40,6 +40,7 @@
         >
           <FontAwesomeIcon :icon="link.icon" class="text-2xl md:text-3xl" />
         </a>
+        <CertificatesCarousel />
       </div>
 
       <p class="font-salsa text-ink-muted">Scroll down to find out more!</p>
@@ -97,10 +98,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faAward, faChevronDown, faFilePdf } from '@fortawesome/free-solid-svg-icons'
+import { faChevronDown, faFilePdf } from '@fortawesome/free-solid-svg-icons'
 import { faGithub, faLinkedin, faSquareGitlab, faSteam } from '@fortawesome/free-brands-svg-icons'
 import { useCachedResource } from '@/composables/useCachedResource'
 import { getApiBaseUrl } from '@/utils/apiBaseUrl'
+import CertificatesCarousel from './CertificatesCarousel.vue'
 import TimelineWheel from './TimelineWheel.vue'
 import type { TimelineEvent } from '@/types/timeline'
 
@@ -135,11 +137,6 @@ const socialLinks = computed(() => {
     ...(homeContent.value?.resumeUrl
       ? [{ href: homeContent.value.resumeUrl, icon: faFilePdf, label: 'Resume' }]
       : []),
-    {
-      href: 'https://drive.google.com/drive/folders/1bs98W8ON9Rfk_zj_zmxD6dYAP14xQQht?usp=sharing',
-      icon: faAward,
-      label: 'Awards',
-    },
     {
       href: 'https://steamcommunity.com/id/SentinelNS_05/',
       icon: faSteam,

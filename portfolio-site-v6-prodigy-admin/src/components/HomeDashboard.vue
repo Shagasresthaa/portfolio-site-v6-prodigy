@@ -1,11 +1,20 @@
 <template>
   <AuthGate>
     <div class="mx-auto w-full max-w-4xl px-4 py-16 font-salsa">
-      <div class="mb-8">
-        <h1 class="text-3xl">Welcome back, {{ authStore.username }}</h1>
-        <p class="text-ink-muted text-sm">
-          Manage the content shown on the public site's home page.
-        </p>
+      <div class="mb-8 flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl">Welcome back, {{ authStore.username }}</h1>
+          <p class="text-ink-muted text-sm">
+            Manage the content shown on the public site's home page.
+          </p>
+        </div>
+        <a
+          href="/home/certificates"
+          class="border-ink-muted/30 hover:bg-surface flex items-center gap-2 rounded-lg border px-4 py-2 transition"
+        >
+          <AcademicCapIcon class="size-4" aria-hidden="true" />
+          Manage Certificates
+        </a>
       </div>
 
       <p v-if="loading" class="text-ink-muted text-center">Loading…</p>
@@ -212,7 +221,13 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import { ChevronDownIcon, ChevronUpIcon, PlusIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import {
+  AcademicCapIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  PlusIcon,
+  TrashIcon,
+} from '@heroicons/vue/24/outline'
 import AuthGate from '@/components/AuthGate.vue'
 import { useAuthStore } from '@/stores/auth'
 import { fetchHomeContent, saveHomeContent, type HomeContent } from '@/composables/useHomeContent'

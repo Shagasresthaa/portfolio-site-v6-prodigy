@@ -1,0 +1,10 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import NavbarComponent from '../../components/NavbarComponent.vue';
+import CertificatesManager from '../../components/CertificatesManager.vue';
+---
+
+<Layout title="Certificates">
+	<NavbarComponent client:load currentPath={Astro.url.pathname} pageTitle="Certificates" />
+	<CertificatesManager client:only="vue" />
+</Layout>
