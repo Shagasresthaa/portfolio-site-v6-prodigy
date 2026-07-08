@@ -176,7 +176,7 @@ const sourceCodeLabel = computed(() => SOURCE_CODE_LABELS[props.project.sourceCo
 const sourceCodeBadgeClass = computed(() => SOURCE_CODE_BADGE_CLASSES[props.project.sourceCodeAvailability])
 
 function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
 }
 
 const dateRangeLabel = computed(() => {
@@ -195,7 +195,7 @@ const durationLabel = computed(() => {
 
   const start = new Date(startDate)
   const end = endDate ? new Date(endDate) : new Date()
-  const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
+  const months = (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth())
 
   if (months < 1) return '< 1 month'
   if (months === 1) return '1 month'
