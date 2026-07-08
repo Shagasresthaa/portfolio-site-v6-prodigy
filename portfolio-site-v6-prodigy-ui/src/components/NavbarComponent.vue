@@ -1,7 +1,7 @@
 <template>
   <Disclosure
     as="nav"
-    v-slot="{ open }"
+    v-slot="{ open, close }"
     class="font-salsa border-ink-muted/20 bg-surface/80 sticky top-0 z-50 w-full border-b backdrop-blur-md"
   >
     <div class="flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -59,20 +59,20 @@
 
     <DisclosurePanel class="md:hidden">
       <div class="border-ink-muted/20 space-y-1 border-t px-4 pt-2 pb-3">
-        <DisclosureButton
+        <RouterLink
           v-for="item in navigation"
           :key="item.name"
-          :as="RouterLink"
           :to="item.href"
           :class="[
             isCurrent(item) ? 'bg-ink text-surface' : 'text-ink-muted hover:bg-ink/5 hover:text-ink',
             'flex items-center gap-2 rounded-lg px-3 py-2 text-base font-medium transition-colors',
           ]"
           :aria-current="isCurrent(item) ? 'page' : undefined"
+          @click="close()"
         >
           <FontAwesomeIcon :icon="item.icon" class="size-4" aria-hidden="true" />
           <span>{{ item.name }}</span>
-        </DisclosureButton>
+        </RouterLink>
       </div>
     </DisclosurePanel>
   </Disclosure>

@@ -1,5 +1,5 @@
 <template>
-  <div class="mx-auto w-full max-w-6xl px-4 py-12">
+  <div class="container mx-auto px-4 py-12">
     <div class="mb-12 text-center">
       <h1 class="font-salsa text-primary mb-3 text-4xl font-bold md:text-5xl">Highlights</h1>
       <p class="font-kalam text-ink-muted text-lg md:text-xl">

@@ -66,7 +66,7 @@
         <p v-if="item.caption" class="font-kalam text-ink-muted text-sm italic">"{{ item.caption }}"</p>
 
         <div v-if="tags.length > 0" class="flex flex-wrap gap-2">
-          <span v-for="tag in tags" :key="tag" class="bg-ink/10 text-ink-muted rounded-full px-2 py-1 text-xs">
+          <span v-for="tag in tags" :key="tag" class="font-salsa bg-ink/10 text-ink-muted rounded-full px-2 py-1 text-xs">
             {{ tag }}
           </span>
         </div>

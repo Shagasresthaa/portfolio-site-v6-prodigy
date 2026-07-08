@@ -69,7 +69,7 @@
         <div>
           <p class="text-ink-muted font-salsa mb-2 text-sm font-semibold">Tech Stack:</p>
           <div class="flex flex-wrap gap-2">
-            <span v-for="tech in techStacks" :key="tech" class="bg-ink/10 text-ink-muted rounded-lg px-2 py-1 text-xs">
+            <span v-for="tech in techStacks" :key="tech" class="font-salsa bg-ink/10 text-ink-muted rounded-lg px-2 py-1 text-xs">
               {{ tech }}
             </span>
           </div>

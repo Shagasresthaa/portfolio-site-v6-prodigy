@@ -67,7 +67,7 @@
         </h3>
         <p class="font-kalam font-semibold">{{ active.position }}</p>
         <p class="font-kalam text-ink-muted">{{ active.institution }}</p>
-        <p v-if="active.duration" class="text-ink-muted mt-1 text-sm">{{ active.duration }}</p>
+        <p v-if="active.duration" class="font-salsa text-ink-muted mt-1 text-sm">{{ active.duration }}</p>
       </div>
     </Transition>
 

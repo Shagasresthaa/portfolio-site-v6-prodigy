@@ -16,3 +16,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Personal run/deploy notes, not shared
+RUN_INSTRUCTIONS.md

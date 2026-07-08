@@ -18,11 +18,23 @@
         />
       </a>
 
+      <img
+        src="/assets/postgresql-logo.svg"
+        alt="Powered by PostgreSQL"
+        class="h-6 w-auto shrink-0 transition-transform hover:scale-105 sm:h-7 md:h-9 lg:h-11"
+      />
+
       <span
         class="font-kalam text-ink-muted text-center text-xs font-bold whitespace-nowrap sm:text-sm md:text-base lg:text-lg"
       >
         &copy; Shaga Sresthaa, {{ currentYear }}
       </span>
+
+      <img
+        src="/assets/kubernetes-logo.svg"
+        alt="Deployed on Kubernetes"
+        class="h-6 w-auto shrink-0 transition-transform hover:scale-105 sm:h-7 md:h-9 lg:h-11"
+      />
 
       <img
         src="/assets/CF_Logo_1.png"
