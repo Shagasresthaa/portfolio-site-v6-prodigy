@@ -6,7 +6,7 @@
       class="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 text-center"
     >
       <img
-        src="/assets/propic.jpg"
+        src="https://cdn.sresthaa.com/homeAssets/propic.webp"
         alt="Shaga Sresthaa"
         class="mb-6 h-48 w-48 rounded-full object-cover shadow-2xl ring-4 ring-black/10 transition-transform duration-300 hover:scale-105 md:h-45 md:w-45 dark:ring-white/20"
       />
@@ -69,7 +69,7 @@
       <div v-if="homeContent" class="mx-auto max-w-6xl">
         <div class="mb-12 flex flex-col items-center gap-8 md:flex-row md:gap-12">
           <img
-            src="/assets/about.jpg"
+            src="https://cdn.sresthaa.com/homeAssets/about.webp"
             alt="About Me"
             class="h-64 w-64 rounded-lg object-cover shadow-2xl ring-4 ring-black/10 md:h-50 md:w-50 dark:ring-white/20"
           />
