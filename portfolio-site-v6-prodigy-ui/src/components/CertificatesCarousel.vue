@@ -49,20 +49,31 @@
               </button>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 overflow-y-auto p-6 sm:grid-cols-3 lg:grid-cols-4">
+            <div
+              class="grid min-h-0 flex-1 grid-cols-2 items-start gap-x-4 gap-y-6 overflow-y-auto p-6 sm:grid-cols-3 lg:grid-cols-4"
+            >
               <button
                 v-for="certificate in certificates"
                 :key="certificate.id"
                 type="button"
-                class="border-ink-muted/20 bg-surface-muted overflow-hidden rounded-lg border transition-transform hover:scale-105"
+                class="border-warning/50 bg-surface-muted relative overflow-hidden rounded-lg border-2 transition-transform hover:scale-105"
                 @click="selected = certificate"
               >
+                <span
+                  class="bg-surface/90 ring-warning absolute top-2 right-2 z-10 flex size-7 items-center justify-center rounded-full shadow ring-2"
+                >
+                  <FontAwesomeIcon :icon="faAward" class="text-warning size-3.5" aria-hidden="true" />
+                </span>
+
                 <img
                   :src="certificate.imageUrl"
                   :alt="certificate.title ?? ''"
                   class="aspect-square w-full object-cover"
                 />
-                <p v-if="certificate.title" class="text-ink-muted truncate p-2 text-left text-xs">
+                <p
+                  v-if="certificate.title"
+                  class="border-warning/20 bg-surface-muted truncate border-t px-3 pt-2 pb-3 text-center text-xs"
+                >
                   {{ certificate.title }}
                 </p>
               </button>
@@ -75,7 +86,7 @@
 
   <!-- Lightbox - the gallery's thumbnails are still smallish, this shows one at full size -->
   <TransitionRoot :show="selected !== null" as="template">
-    <Dialog as="div" class="relative z-[60]" @close="selected = null">
+    <Dialog as="div" class="relative z-60" @close="selected = null">
       <TransitionChild
         as="template"
         enter="duration-200 ease-out"
