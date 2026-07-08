@@ -38,7 +38,7 @@
           class="text-ink-muted hover:text-primary transition-all duration-300 hover:scale-110"
           :aria-label="link.label"
         >
-          <FontAwesomeIcon :icon="link.icon" class="size-7 md:size-8" />
+          <FontAwesomeIcon :icon="link.icon" class="text-2xl md:text-3xl" />
         </a>
       </div>
 
