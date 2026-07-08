@@ -9,6 +9,15 @@ spec:
     - host: sresthaa.com
       http:
         paths:
+          # More specific than / below, so ingress-spec longest-prefix-match routing sends /blog
+          # and /blog/* here regardless of listed order - see BlogPreviewController for why.
+          - path: /blog
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8080
           - path: /
             pathType: Prefix
             backend:
@@ -19,6 +28,13 @@ spec:
     - host: www.sresthaa.com
       http:
         paths:
+          - path: /blog
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8080
           - path: /
             pathType: Prefix
             backend:

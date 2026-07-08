@@ -64,6 +64,10 @@ class CertificateControllerTest {
 
 	@Test
 	void listAllIsPublicAndReturnsNewestFirst() throws Exception {
+		// This dev DB has real certificates uploaded outside of this test's transaction (via the
+		// admin UI) - clear it within the transaction so the count assertion below is exact;
+		// rolled back after, doesn't touch the real rows.
+		certificateRepository.deleteAll();
 		certificateRepository.save(new Certificate("https://cdn.example/first.webp", null));
 		certificateRepository.save(new Certificate("https://cdn.example/second.webp", "AWS Certified"));
 
@@ -94,6 +98,7 @@ class CertificateControllerTest {
 
 	@Test
 	void createSucceedsAndPersists() throws Exception {
+		certificateRepository.deleteAll();
 		mockMvc.perform(post("/api/admin/certificates")
 				.header("Authorization", "Bearer " + token)
 				.contentType(MediaType.APPLICATION_JSON)

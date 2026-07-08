@@ -2,6 +2,7 @@ package com.sresthaa.publicui.service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -52,6 +53,12 @@ public class BlogService {
 
 	public BlogSummary getPublishedBySlug(String slug) {
 		return BlogSummary.from(findPublishedBlogBySlug(slug));
+	}
+
+	// Non-throwing counterpart to getPublishedBySlug, for BlogPreviewController - a missing/
+	// unpublished slug there should just fall back to the generic shell, not 404 the whole page.
+	public Optional<BlogSummary> findPublishedForPreview(String slug) {
+		return blogRepository.findBySlugAndPublishedTrue(slug).map(BlogSummary::from);
 	}
 
 	public BlogSummary create(BlogUpsertRequest request) {
