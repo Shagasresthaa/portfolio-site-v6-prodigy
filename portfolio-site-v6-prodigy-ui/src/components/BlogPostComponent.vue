@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-auto px-4 py-12">
+  <div class="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
     <RouterLink
       to="/blog"
       class="font-salsa bg-ink/5 hover:bg-ink/10 text-ink mb-6 inline-flex items-center gap-2 rounded-lg px-4 py-2 backdrop-blur-md transition-colors"
@@ -11,7 +11,7 @@
     <template v-if="!loading">
       <article
         v-if="post"
-        class="border-ink-muted/20 bg-surface-muted/75 mx-auto max-w-4xl rounded-2xl border p-8 shadow-xl backdrop-blur-md"
+        class="border-ink-muted/20 bg-surface-muted/75 w-full rounded-2xl border p-8 shadow-xl backdrop-blur-md"
       >
         <div v-if="post.coverImage" class="bg-ink/10 -mx-8 -mt-8 mb-8 overflow-hidden rounded-t-2xl">
           <img :src="post.coverImage" :alt="post.title" class="h-96 w-full object-cover" />
@@ -82,7 +82,7 @@
             @submit.prevent="handleCommentSubmit"
           >
             <label class="flex items-center gap-2 text-sm">
-              <input v-model="postAnonymously" type="checkbox" class="accent-(--color-primary) h-4 w-4 rounded" />
+              <input v-model="postAnonymously" type="checkbox" class="accent-primary h-4 w-4 rounded" />
               Post anonymously
             </label>
 
@@ -92,7 +92,7 @@
               type="text"
               maxlength="100"
               placeholder="Your name (optional)"
-              class="border-ink-muted/30 bg-surface-muted focus:border-(--color-primary) w-full rounded border p-3 text-sm placeholder:text-ink-muted/70 focus:outline-none"
+              class="border-ink-muted/30 bg-surface-muted focus:border-primary w-full rounded border p-3 text-sm placeholder:text-ink-muted/70 focus:outline-none"
             />
 
             <textarea
@@ -101,7 +101,7 @@
               rows="4"
               maxlength="2000"
               placeholder="Write your comment..."
-              class="border-ink-muted/30 bg-surface-muted focus:border-(--color-primary) w-full rounded border p-3 text-sm placeholder:text-ink-muted/70 focus:outline-none"
+              class="border-ink-muted/30 bg-surface-muted focus:border-primary w-full rounded border p-3 text-sm placeholder:text-ink-muted/70 focus:outline-none"
             />
 
             <p v-if="commentError" class="text-danger text-sm">{{ commentError }}</p>

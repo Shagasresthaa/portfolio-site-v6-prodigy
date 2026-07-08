@@ -53,7 +53,7 @@
         </RouterLink>
         <button
           type="button"
-          class="bg-ink/5 hover:bg-ink/10 text-ink-muted flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
+          class="bg-ink/5 hover:bg-primary/10 text-ink-muted hover:text-primary flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors"
           @click="handleShare"
         >
           <FontAwesomeIcon :icon="justCopied ? faCheck : faShareNodes" class="size-3.5" aria-hidden="true" />
