@@ -2,7 +2,7 @@
 jjwt = "0.13.0"
 webauthn4j = "0.31.8.RELEASE"
 totp = "1.7.1"
-awssdk = "2.46.21"
+awssdk = "2.47.5"
 
 [libraries]
 jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
