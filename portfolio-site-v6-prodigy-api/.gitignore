@@ -43,3 +43,4 @@ out/
 !.env.*.example
 application-local.properties
 application-local.yml
+src/test/resources/application.properties

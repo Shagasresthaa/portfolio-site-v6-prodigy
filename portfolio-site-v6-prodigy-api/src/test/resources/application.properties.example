@@ -1,0 +1,38 @@
+spring.application.name=portfolio-site-v6-prodigy-api
+
+# Fully self-contained (not just a -local override) - src/test/resources takes classpath
+# priority over src/main/resources for the test task, so this replaces application.properties
+# entirely rather than layering on top of it. Points at its own database so test runs never
+# read/write the real local dev data in application-local.properties's database - see
+# BlogControllerTest/HighlightControllerTest history for what happens when tests share a DB
+# with manual dev testing (count/list assertions silently pick up whatever you last created
+# by hand and fail with an off-by-one).
+spring.datasource.url=jdbc:postgresql://localhost:5430/your_test_database_name
+spring.datasource.username=prodigy
+spring.datasource.password=password-123456
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.jpa.hibernate.ddl-auto=update
+
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
+
+ui.internal-base-url=http://ui
+
+# Dummy values - real behavior isn't exercised in tests (R2StorageService is always
+# @MockitoBean-mocked; TOTP/JWT crypto just needs any well-formed key to construct the beans).
+totp.secret-encryption-key=REPLACE_WITH_YOUR_OWN_GENERATED_KEY
+jwt.secret=REPLACE_WITH_YOUR_OWN_GENERATED_KEY
+jwt.expiration-minutes=60
+
+cors.allowed-origins=http://localhost:4321,http://localhost:5173
+
+webauthn.relying-party-id=localhost
+webauthn.relying-party-name=Portfolio Admin
+webauthn.origin=http://localhost:4321
+
+r2.account-id=test-account-id
+r2.access-key-id=test-access-key-id
+r2.secret-access-key=test-secret-access-key
+r2.bucket-name=test-bucket
+r2.endpoint=https://test-account-id.r2.cloudflarestorage.com
+r2.public-base-url=https://pub-test.r2.dev

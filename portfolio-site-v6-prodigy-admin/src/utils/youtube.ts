@@ -8,9 +8,9 @@ export function getYoutubeThumbnailUrl(videoUrl: string): string | null {
     const url = new URL(videoUrl)
     let videoId: string | null = null
 
-    if (url.hostname.includes('youtu.be')) {
+    if (url.hostname === 'youtu.be') {
       videoId = url.pathname.slice(1)
-    } else if (url.hostname.includes('youtube.com')) {
+    } else if (url.hostname === 'youtube.com' || url.hostname === 'www.youtube.com' || url.hostname.endsWith('.youtube.com')) {
       if (url.pathname === '/watch') {
         videoId = url.searchParams.get('v')
       } else if (url.pathname.startsWith('/embed/') || url.pathname.startsWith('/shorts/')) {

@@ -3,6 +3,7 @@ package com.sresthaa.publicui.service;
 import java.util.regex.Matcher;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import com.sresthaa.publicui.dto.BlogSummary;
 
@@ -42,13 +43,6 @@ public class BlogPreviewService {
 	}
 
 	private String escapeHtml(String value) {
-		if (value == null) {
-			return "";
-		}
-		return value.replace("&", "&amp;")
-				.replace("<", "&lt;")
-				.replace(">", "&gt;")
-				.replace("\"", "&quot;")
-				.replace("'", "&#39;");
+		return value == null ? "" : HtmlUtils.htmlEscape(value);
 	}
 }
