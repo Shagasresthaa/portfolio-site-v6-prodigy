@@ -16,9 +16,8 @@ import org.springframework.stereotype.Component;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
-// AES-256-GCM, applied explicitly via @Convert (not autoApply) — only fields that must be
-// decryptable (e.g. a TOTP secret, used to compute codes) should use this. One-way values
-// like password hashes or backup-code hashes should never go through this; hash them instead.
+// AES-256-GCM. Only for fields that must be decryptable (e.g. TOTP secret) - never for
+// one-way values like password/backup-code hashes.
 @Component
 @Converter(autoApply = false)
 public class EncryptedStringConverter implements AttributeConverter<String, String> {

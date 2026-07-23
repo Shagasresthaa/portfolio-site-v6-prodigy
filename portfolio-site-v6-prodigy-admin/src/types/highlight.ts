@@ -1,6 +1,4 @@
-// Mirrors portfolio-site-v6-prodigy-ui's src/types/highlight.ts - keep in
-// sync, this is the shape HighlightCard.vue/HighlightsComponent.vue there
-// expect from highlights.json.
+// Mirrors the UI's src/types/highlight.ts - keep in sync.
 export type HighlightMediaType = 'IMAGE' | 'VIDEO'
 
 export interface HighlightItem {
@@ -9,13 +7,9 @@ export interface HighlightItem {
   description?: string
   caption?: string
   mediaType: HighlightMediaType
-  // IMAGE only: thumbnailImage is what the card grid shows, image is the
-  // full-size version shown in the modal when the thumbnail is clicked.
-  thumbnailImage?: string
-  image?: string
-  // VIDEO only.
-  videoUrl?: string
-  // Comma-separated, matching the old site's storage format.
-  tags: string
+  thumbnailImage?: string // IMAGE only: grid-card thumbnail.
+  image?: string // IMAGE only: full-size, shown in the modal.
+  videoUrl?: string // VIDEO only.
+  tags: string // Comma-separated.
   createdAt: string
 }

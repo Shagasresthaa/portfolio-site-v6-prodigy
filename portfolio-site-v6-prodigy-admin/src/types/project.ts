@@ -1,7 +1,4 @@
-// Mirrors portfolio-site-v6-prodigy-ui's src/types/project.ts - keep in
-// sync, this is the shape ProjectCard.vue/ProjectsComponent.vue there expect
-// from projects.json. Unlike HighlightItem, there's only one image field -
-// no separate thumbnail/full-size distinction for projects.
+// Mirrors the UI's src/types/project.ts - keep in sync. Unlike HighlightItem, one image field only, no thumbnail.
 export type ProjectStatus = 'PLANNING' | 'IN_PROGRESS' | 'COMPLETED' | 'MAINTAINED' | 'ARCHIVED'
 export type CollabMode = 'SOLO' | 'GROUP'
 export type AffiliationType = 'INDEPENDENT' | 'UNIVERSITY' | 'ORGANIZATION' | 'CLUB'
@@ -20,15 +17,10 @@ export interface Project {
   affiliation: string
   affiliationType: AffiliationType
   sourceCodeAvailability: SourceCodeAvailability
-  // Comma-separated, matching the old site's storage format.
-  techStacks: string
+  techStacks: string // Comma-separated.
   projectUrl?: string
   liveUrl?: string
-  // Showcase media: an uploaded/converted image or an embedded demo video
-  // (videoUrl, e.g. YouTube) - mirrors HighlightItem's mediaType split.
-  // Missing/undefined is treated as IMAGE for older saved data (including
-  // existing admin-overrides localStorage entries) that predates this field.
-  mediaType?: ProjectMediaType
+  mediaType?: ProjectMediaType // Missing/undefined treated as IMAGE (data predating this field).
   image?: string
   videoUrl?: string
 }

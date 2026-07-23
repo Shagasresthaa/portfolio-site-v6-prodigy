@@ -256,8 +256,7 @@ onMounted(async () => {
   }
 })
 
-// Clear the "Saved." message as soon as the draft changes again, so it can't
-// linger and imply an edit is saved when it isn't.
+// Clear "Saved." as soon as the draft changes again, so it can't imply a later edit is saved.
 watch(draft, () => (saved.value = false), { deep: true })
 
 async function handleResumeFileChange(event: Event) {
@@ -289,8 +288,7 @@ async function handleSave() {
   saving.value = true
   saveError.value = null
   try {
-    // Not reassigning draft from the response - it's just an echo of what was sent, and doing
-    // so would re-trigger the deep watch above, immediately flipping `saved` back to false.
+    // Not reassigning draft from the response - it's just an echo, and would re-trigger the deep watch above.
     await saveHomeContent(draft.value)
     saved.value = true
   } catch (err) {

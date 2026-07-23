@@ -15,9 +15,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-// Cloudflare R2 is S3-compatible - this just points the AWS SDK's S3 client at R2's endpoint.
-// forcePathStyle is required per R2's docs (bucket-in-path, not bucket-as-subdomain); region is
-// the literal string "auto", also per R2's docs, not a real AWS region.
+// R2 is S3-compatible. forcePathStyle required (bucket-in-path); region is literally "auto", not a real AWS region.
 @Service
 public class R2StorageService {
 

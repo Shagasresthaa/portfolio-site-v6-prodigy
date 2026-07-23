@@ -141,9 +141,7 @@ import BlogCard from './BlogCard.vue'
 import TagFilterPopover from './TagFilterPopover.vue'
 import type { BlogPost } from '@/types/blog'
 
-// Cache key changed (was "blog-content") since the old mock's cached shape
-// ({ posts: [...] }) doesn't match the real API's plain-array response - reusing the old
-// key would read a stale, wrongly-shaped cache back as if it were the new format.
+// -v2: old mock's `{ posts: [...] }` cache shape doesn't match the API's plain array.
 const { data: blogContent } = useCachedResource<BlogPost[]>('blog-content-v2', `${getApiBaseUrl()}/api/blog`)
 
 const ITEMS_PER_PAGE = 12

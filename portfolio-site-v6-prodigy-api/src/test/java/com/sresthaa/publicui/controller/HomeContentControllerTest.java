@@ -51,9 +51,7 @@ class HomeContentControllerTest {
 
 	@Test
 	void getReturnsEmptyDefaultsWhenNoContentSaved() throws Exception {
-		// This dev DB has real seeded content outside of this test's transaction (see the
-		// "Home page" API rollout) - clear it within the transaction to test the true empty
-		// case; rolled back after, doesn't touch the real row.
+		// Defensive clear (test DB should already be empty) - rolled back after this test.
 		homeContentRepository.deleteAll();
 
 		mockMvc.perform(get("/api/home"))

@@ -10,8 +10,7 @@ export interface BlogPost {
   publishedAt?: string
   // Comma-separated, matching the old site's storage format.
   tags: string
-  // Baseline counts simulating other visitors - the current browser's own vote
-  // (tracked locally, see useBlogReactions) is layered on top of these.
+  // Server-authoritative; see useBlogReactions for how a vote updates these.
   likeCount: number
   dislikeCount: number
 }

@@ -58,18 +58,12 @@ const router = createRouter({
 })
 
 /**
- * Baseline title + meta tags per route, driven by stores/siteSettings.ts.
- * BlogPostComponent overrides these further with post-specific values once
- * its data loads (see useDocumentMeta) - this still matters for the brief
- * moment before that, and for every other route (Home/Projects/Highlights/
- * Contact), which have no per-entity content of their own to pull from.
+ * Baseline title + meta tags per route, from siteSettings. BlogPostComponent
+ * overrides these once its own post data loads (see useDocumentMeta).
  *
- * Re-applying unconditionally on every navigation (rather than once at boot,
- * or relying on the previous page's cleanup) is deliberate: afterEach runs
- * *before* the outgoing route's component unmounts, so if that component
- * doesn't restore anything on unmount (useDocumentMeta doesn't), the values
- * set here are still exactly what's left in place afterward - no explicit
- * teardown needed on the way out.
+ * Applied unconditionally on every navigation rather than once at boot:
+ * afterEach fires before the outgoing component unmounts, so nothing needs
+ * to restore these on the way out.
  */
 function applyBaselineMeta(pageTitle: string) {
   const store = useSiteSettingsStore()
@@ -93,11 +87,9 @@ router.afterEach((to) => {
 })
 
 /**
- * Site settings load asynchronously and can resolve after the initial
- * afterEach already ran with fallback values - this re-applies the baseline
- * for whichever route is current once real data arrives, rather than
- * waiting for the next navigation to pick it up. Must be called after
- * `app.use(pinia)` (see main.ts), since it needs an active Pinia instance.
+ * Site settings load async and can resolve after the first afterEach already
+ * ran with fallback values - re-applies the baseline once real data arrives.
+ * Must run after `app.use(pinia)` (see main.ts).
  */
 export function initSiteSettingsTracking() {
   const store = useSiteSettingsStore()

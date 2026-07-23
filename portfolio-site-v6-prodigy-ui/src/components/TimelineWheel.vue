@@ -4,19 +4,15 @@
       My Journey so far
     </h2>
 
-    <!-- Desktop/tablet (md and up, ~768px+): events sit on an arc that slowly rotates, so different years fly
-    into the stationary glass window at the top over time. Hovering a year eases
-    the rotation to bring it into that window and pauses auto-rotation until you
-    leave. Drag left/right to spin it manually. -->
+    <!-- Desktop/tablet (md+): events rotate on an arc into the stationary window at top.
+    Hover eases a year into view and pauses auto-rotate; drag to spin manually. -->
     <div
       class="relative hidden h-[14rem] w-full touch-none select-none md:block"
       :class="isDragging ? 'cursor-grabbing' : 'cursor-grab'"
       @mouseleave="clearHovered"
       @pointerdown="startDrag"
     >
-      <!-- Stationary glass window - the read-point events rotate into. Sits behind -->
-      <!-- the labels (not on top) so its backdrop-blur softens the page behind it -->
-      <!-- rather than blurring the active year's own text into a smear. -->
+      <!-- Behind the labels, not on top - backdrop-blur must not blur the active label's own text. -->
       <div
         class="border-primary/60 bg-primary/25 pointer-events-none absolute min-w-44 -translate-x-1/2 -translate-y-1/2 rounded-xl border-2 py-8 text-center backdrop-blur-md"
         :style="{ left: `${CENTER_X_PCT}%`, top: `${CENTER_Y - RADIUS_Y}rem` }"
@@ -37,9 +33,7 @@
         :aria-label="node.title"
         @mouseenter="setHovered(i)"
       >
-        <!-- Scale is on its own element with the default (centered) transform-origin, -->
-        <!-- separate from the button's origin-top rotation - sharing one origin would -->
-        <!-- make the magnified text bob vertically as it grows from a pinned top edge. -->
+        <!-- Scale on its own element (centered origin) - sharing the button's origin-top would bob the text as it magnifies. -->
         <span
           class="font-salsa inline-block text-lg transition-[opacity,color] duration-300"
           :class="i === activeIndex ? 'text-primary font-semibold' : 'text-ink-muted hover:text-primary'"
@@ -50,9 +44,7 @@
       </button>
     </div>
 
-    <!-- Cross-fades on activeIndex change instead of snapping straight to the new
-    event's text - out-in so the old text fully clears before the new one appears,
-    rather than two different-length blocks overlapping mid-transition. -->
+    <!-- out-in avoids two different-length text blocks overlapping mid-transition. -->
     <Transition
       mode="out-in"
       enter-active-class="transition-opacity duration-200"
@@ -71,13 +63,8 @@
       </div>
     </Transition>
 
-    <!-- Mobile/tablet fallback: a rotating arc doesn't translate to narrow viewports, so
-    events scroll horizontally instead of stacking vertically - stacking all of them made
-    the About section extremely long. Auto-scrolls continuously like the desktop arc's
-    auto-rotate, pausing while the user's finger/pointer is down so they can swipe through
-    manually. The list is rendered twice back-to-back so the loop is seamless: once the
-    scroll position passes one full set, it jumps back by that width - invisible since the
-    next set is an identical duplicate. -->
+    <!-- Mobile fallback: auto-scrolling horizontal cards instead of the arc. List is duplicated
+    back-to-back for a seamless loop - scroll position wraps by one set's width. -->
     <div
       ref="scrollerRef"
       class="[scrollbar-width:none] [&::-webkit-scrollbar]:hidden mt-8 flex gap-6 overflow-x-auto px-[7.5%] md:hidden"
@@ -120,22 +107,16 @@ interface Node extends TimelineEvent {
   scale: number
 }
 
-// Horizontal placement is a percentage of the container width so the arc scales
-// fluidly. Vertical placement is in rem (not px), the standard unit for anything
-// that should track the user's root font-size rather than a hardcoded pixel value.
+// Horizontal in %, vertical in rem (tracks root font-size).
 const CENTER_X_PCT = 50
 const RADIUS_X_PCT = 28
 const CENTER_Y = 12 // rem
 const RADIUS_Y = 7 // rem
-// Only labels within this many degrees of the top are shown - the rest are
-// conceptually "around the back" of the full circle, faded out until rotation
-// brings them into range.
+// Labels beyond this many degrees from top are "around the back", faded out.
 const VISIBLE_RANGE = 75
-// The label only tilts a fraction of its arc angle - rotating it the full amount
-// makes the numbers hard to read rather than subtly "fanned out".
+// Fraction of arc angle the label tilts - full angle makes numbers unreadable.
 const LABEL_ROTATION_SCALE = 0.35
-// A label is magnified like it's passing under a magnifying glass as it nears
-// the window (angle 0), ramping from 1x up to MAX_SCALE within this many degrees.
+// Label magnifies from 1x to MAX_SCALE within this many degrees of angle 0.
 const MAGNIFY_RANGE = 20
 const MAX_SCALE = 1.35
 const ROTATION_SPEED_DEG_PER_SEC = 6
@@ -143,8 +124,7 @@ const HOVER_EASE = 0.08
 // How fast the mobile horizontal scroller drifts, in px/sec.
 const MOBILE_AUTO_SCROLL_SPEED_PX_PER_SEC = 40
 
-// Use the end year for a range ("Dec, 2021 - Nov, 2023" -> 2023), or the only
-// year when there's no range ("Jan, 2024" -> 2024, "Mar, 2025 - Present" -> 2025).
+// Last 4-digit year in the string (end year of a range, or the only year).
 function extractYear(date: string): string {
   const matches = date.match(/\d{4}/g)
   return matches ? matches[matches.length - 1]! : date
@@ -238,17 +218,12 @@ function startDrag(event: PointerEvent) {
 const scrollerRef = ref<HTMLElement | null>(null)
 const isMobileScrollInteracting = ref(false)
 
-// Tracked ourselves rather than read back from `scroller.scrollLeft` each frame -
-// some browsers round scrollLeft to the nearest integer on read/write, and at 40px/sec
-// each frame only advances it by a fraction of a pixel, which gets truncated back to
-// the same integer forever if we rely on the DOM property as the accumulator.
+// Tracked separately, not read back from scrollLeft - some browsers round scrollLeft
+// to an integer, which truncates sub-pixel/frame increments to zero forever.
 let mobileScrollPosition = 0
 
-// Fallback only - resuming should normally happen via the container's native
-// `scrollend` event instead (see below). Resuming on pointerup fires too early:
-// a swipe's momentum/deceleration keeps moving scrollLeft well after the finger
-// lifts, and immediately overriding it with our own scrollLeft assignment cancels
-// that momentum, which read as "autoscroll ignores my swipes".
+// Fallback only - normal resume is via the `scrollend` event. Resuming on pointerup
+// instead would cancel the swipe's native momentum scroll while it's still settling.
 const INTERACTION_TIMEOUT_MS = 3000
 let interactionTimeoutId: ReturnType<typeof setTimeout> | undefined
 
@@ -284,13 +259,11 @@ function tick(time: number) {
     rotation.value -= ROTATION_SPEED_DEG_PER_SEC * deltaSeconds
   }
 
-  // clientWidth is 0 while the element is `display:none` (i.e. md+ viewports),
-  // so this is a no-op on desktop rather than scrolling a hidden element.
+  // clientWidth is 0 when hidden (md+ viewports), so this no-ops on desktop.
   const scroller = scrollerRef.value
   if (scroller && scroller.clientWidth > 0) {
     if (isMobileScrollInteracting.value) {
-      // Keep our tracked position in sync with the user's manual scroll so
-      // autoscroll resumes from wherever they left it, with no visible jump.
+      // Stay in sync with manual scroll so autoscroll resumes without a jump.
       mobileScrollPosition = scroller.scrollLeft
     } else {
       const loopWidth = scroller.scrollWidth / 2

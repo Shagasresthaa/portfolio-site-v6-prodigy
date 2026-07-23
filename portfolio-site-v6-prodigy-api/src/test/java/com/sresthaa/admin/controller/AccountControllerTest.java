@@ -135,9 +135,7 @@ class AccountControllerTest {
 				.andExpect(status().isUnauthorized());
 	}
 
-	// No corresponding "accepts correct password" test: that's just the inverse of the one
-	// boolean check this rejection test already exercises (PasswordEncoder.matches) - there's
-	// no code path where accept could independently break while reject stays correct.
+	// No "accepts correct password" counterpart - same PasswordEncoder.matches() check either way.
 	@Test
 	void verifyPasswordRejectsIncorrectPassword() throws Exception {
 		mockMvc.perform(post("/api/admin/account/verify-password")

@@ -41,9 +41,7 @@ public class SecurityConfig {
 			CorsConfigurationSource corsConfigurationSource) throws Exception {
 		http
 				.cors(cors -> cors.configurationSource(corsConfigurationSource))
-				// CSRF protects cookie-based auth from browsers auto-attaching credentials cross-site.
-				// This API is stateless JWT-in-Authorization-header (see JwtAuthenticationFilter) - no
-				// cookie is ever set, so there's no ambient credential for CSRF to ride on.
+				// No cookie is ever set (stateless JWT-in-header auth), so CSRF doesn't apply.
 				.csrf(AbstractHttpConfigurer::disable) // codeql[java/spring-disabled-csrf-protection]
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth

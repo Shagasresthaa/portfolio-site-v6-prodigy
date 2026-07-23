@@ -11,11 +11,8 @@ import com.sresthaa.publicui.service.UiShellClient;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-// k8s/ingress.yaml routes /blog and /blog/* on the public hostnames here instead of to the ui
-// service - everything else (static assets, in-app client-side navigation once the SPA has
-// booted) still goes straight to ui, untouched. See BlogPreviewService for why this exists at
-// all: link-preview crawlers never execute JS, so without this every shared blog post URL would
-// show the same generic, content-less preview regardless of which post it actually is.
+// k8s/ingress.yaml routes /blog and /blog/* here instead of to ui - everything else still
+// goes straight to ui untouched.
 @RestController
 public class BlogPreviewController {
 
@@ -30,8 +27,7 @@ public class BlogPreviewController {
 		this.uiShellClient = uiShellClient;
 	}
 
-	// The list page has no single entity to describe - just pass the shell through untouched,
-	// same as before this controller existed.
+	// No single entity to describe here - pass the shell through untouched.
 	@GetMapping(value = "/blog", produces = MediaType.TEXT_HTML_VALUE)
 	public String blogList() {
 		return uiShellClient.fetchIndexHtml();

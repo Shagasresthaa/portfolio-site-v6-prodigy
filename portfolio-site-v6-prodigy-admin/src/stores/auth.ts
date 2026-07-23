@@ -29,9 +29,7 @@ function sessionFromToken(username: string, token: string): Session {
   return { username, token, expiresAt: decodeJwtExpiryMs(token) }
 }
 
-// Authenticated request that does NOT log the user out on 401 - unlike useApi.ts's authFetch,
-// a 401 from these account-management endpoints usually means "current password was wrong",
-// not "your session is invalid", so each caller below interprets it itself.
+// Unlike useApi.ts's authFetch, doesn't log out on 401 - here it usually means wrong password, not an invalid session.
 async function authedFetch(session: Session, path: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers)
   headers.set('Authorization', `Bearer ${session.token}`)
@@ -39,8 +37,7 @@ async function authedFetch(session: Session, path: string, init: RequestInit = {
 }
 
 async function completeWebAuthnLogin(username: string, webAuthnOptionsJSON: string): Promise<Session> {
-  // webAuthnOptionsJSON is itself a JSON string (the API's `String` return type from the
-  // webauthn4j ceremony, nested as one field of the login response's own JSON).
+  // webAuthnOptionsJSON is a JSON string nested inside the login response's JSON.
   const options = JSON.parse(webAuthnOptionsJSON) as PublicKeyCredentialRequestOptionsJSON
   const assertionJSON = await assertSecurityKey(options)
 
@@ -97,10 +94,7 @@ async function passwordLogin(username: string, password: string): Promise<LoginR
 }
 
 function readSession(): Session | null {
-  // Astro prerenders this island's initial markup on the server (even with
-  // client:load), where localStorage/window don't exist - fall back to a
-  // logged-out state there; the client-side hydration pass re-runs this
-  // with the real value.
+  // No localStorage during Astro's server prerender - falls back to logged-out, client hydration re-runs for real.
   if (typeof localStorage === 'undefined') return null
 
   const raw = localStorage.getItem(STORAGE_KEY)
@@ -128,8 +122,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newSession))
   }
 
-  // Only asks the caller to do something further when a choice or a code is needed.
-  // A lone WebAuthn requirement resolves itself here, same as before this method existed.
+  // Only returns non-DONE when the caller needs to do something further (choice or code).
   async function login(usernameInput: string, password: string): Promise<LoginOutcome> {
     const body = await passwordLogin(usernameInput, password)
 
@@ -160,9 +153,8 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(STORAGE_KEY)
   }
 
-  // Confirms the stored token is still genuinely valid against the server (and syncs the
-  // canonical username) rather than trusting locally-cached state - see AuthGate.vue. Logs
-  // out and returns false on any failure, so callers just need to redirect in that case.
+  // Validates the token against the server and syncs the canonical username - see AuthGate.vue.
+  // Logs out and returns false on any failure.
   async function verifySession(): Promise<boolean> {
     if (!session.value) return false
     try {

@@ -292,8 +292,7 @@ const form = reactive({
   published: false,
 })
 
-// Inserts the picked image as markdown at the current cursor position (falls back to
-// appending if the editor ref isn't ready for some reason).
+// Inserts at cursor; falls back to appending if the editor ref isn't ready.
 function handleInsertImage(image: BlogImage) {
   const markdown = `![${image.altText ?? ''}](${image.url})`
   if (editorRef.value) {
@@ -302,9 +301,7 @@ function handleInsertImage(image: BlogImage) {
     form.content += `\n${markdown}\n`
   }
 }
-// The URL actually rendered in <img :src>. Either the real, already-uploaded URL (editing
-// an existing post, cover untouched) or a local object URL for a freshly-chosen file, in
-// which case pendingCoverBlob is also set and gets uploaded on save.
+// Rendered <img :src>: real uploaded URL, or a local object URL when pendingCoverBlob is set (uploads on save).
 const coverPreview = ref<string | null>(null)
 const pendingCoverBlob = ref<Blob | null>(null)
 const processingImage = ref(false)
@@ -322,9 +319,7 @@ function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html)
 }
 
-// The editor's paste/drop-to-upload affordance - reuses the same WebP conversion as the
-// cover image, uploaded through the same real endpoint so inline post images are hosted
-// URLs rather than base64 bloating the stored markdown content.
+// Editor's paste/drop-to-upload: same WebP pipeline as the cover image, so inline images are hosted URLs, not base64.
 async function handleUploadImg(files: File[], callback: (urls: string[]) => void) {
   try {
     const urls = await Promise.all(
@@ -434,15 +429,13 @@ async function handleSave() {
     let coverImage: string | undefined
 
     if (pendingCoverBlob.value) {
-      // A new file was chosen this session - upload it, then drop the local preview
-      // (revoking its object URL) now that the real URL is known.
+      // New file chosen this session - upload, then swap the local preview for the real URL.
       coverImage = await uploadImage(pendingCoverBlob.value, 'blog')
       revokePendingCoverObjectUrl()
       pendingCoverBlob.value = null
       coverPreview.value = coverImage
     } else {
-      // Editing an existing post without touching its cover - reuse the real URL already
-      // shown in the preview (or none, if it never had one).
+      // Cover untouched - reuse the URL already shown in the preview.
       coverImage = coverPreview.value ?? undefined
     }
 

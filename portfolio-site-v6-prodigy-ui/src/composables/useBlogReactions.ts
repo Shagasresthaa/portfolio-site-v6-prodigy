@@ -32,16 +32,13 @@ async function submitReaction(
 }
 
 /**
- * `vote` (this browser's own reaction) is tracked locally in localStorage purely to decide
- * which button renders highlighted - there's no visitor identity on the public site by design
- * (see memory: no-user-accounts-by-design), so the server can't look this up itself.
+ * `vote` is tracked in localStorage only to decide which button highlights - no visitor
+ * identity exists on this site, so the server can't look up a browser's past vote itself.
  *
- * `likeCount`/`dislikeCount` are NOT computed by adding the local vote on top of a base count -
- * that would double-count once the base count itself already reflects a persisted vote (e.g.
- * after `getBaseLikeCount`'s cache TTL expires and refetches a total that already includes this
- * browser's earlier vote). Instead, the counts the server returns after each reaction call become
- * the authoritative override; `getBaseLikeCount`/`getBaseDislikeCount` (the post's fetched
- * counts) are only the fallback shown before this browser has voted this session.
+ * Counts are never computed by adding the local vote onto a base count (would double-count
+ * once a refreshed base already includes it) - the server's response after each reaction call
+ * is always the authoritative count; `getBaseLikeCount`/`getBaseDislikeCount` are only the
+ * pre-vote fallback.
  */
 export function useBlogReactions(slug: string, getBaseLikeCount: () => number, getBaseDislikeCount: () => number) {
   const vote = ref<Vote>(readVote(slug))
@@ -64,8 +61,7 @@ export function useBlogReactions(slug: string, getBaseLikeCount: () => number, g
       likeCountOverride.value = counts.likeCount
       dislikeCountOverride.value = counts.dislikeCount
     } catch {
-      // Best-effort - the vote still toggles locally even if this fails; worst case the
-      // displayed count is stale until the next full page reload.
+      // Best-effort - vote still toggles locally; count just stays stale until reload.
     }
   }
 

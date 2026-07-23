@@ -3,9 +3,7 @@ import { getApiBaseUrl } from '@/utils/apiBaseUrl'
 
 export { getApiBaseUrl }
 
-// Attaches the current session's bearer token. On 401 (expired/invalid token),
-// logs out and sends the user back to the login page rather than surfacing a
-// confusing error from whatever called this.
+// Attaches the bearer token; force-logs-out and redirects to `/` on 401.
 export async function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const authStore = useAuthStore()
   const headers = new Headers(init.headers)

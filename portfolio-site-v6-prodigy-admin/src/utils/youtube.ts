@@ -1,8 +1,4 @@
-/**
- * Extracts a YouTube video ID from the common URL shapes (watch, youtu.be,
- * embed, shorts) so the admin grid can show YouTube's own thumbnail instead
- * of a generic icon - decorative only, not used for playback.
- */
+/** Extracts a YouTube video ID (watch/youtu.be/embed/shorts) for the grid's thumbnail - decorative only, not used for playback. */
 export function getYoutubeThumbnailUrl(videoUrl: string): string | null {
   try {
     const url = new URL(videoUrl)

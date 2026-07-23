@@ -443,9 +443,7 @@ const form = reactive({
   mediaType: 'IMAGE' as ProjectMediaType,
   videoUrl: '',
 })
-// The URL actually rendered in <img :src>. Either the real, already-uploaded URL (editing
-// an existing project, image untouched) or a local object URL for a freshly-chosen file, in
-// which case pendingImageBlob is also set and gets uploaded on save.
+// Rendered <img :src>: real uploaded URL, or a local object URL when pendingImageBlob is set (uploads on save).
 const imagePreviewUrl = ref<string | null>(null)
 const pendingImageBlob = ref<Blob | null>(null)
 const processingImage = ref(false)
@@ -603,15 +601,13 @@ async function handleSave() {
 
     if (form.mediaType === 'IMAGE') {
       if (pendingImageBlob.value) {
-        // A new file was chosen this session - upload it, then drop the local preview
-        // (revoking its object URL) now that the real URL is known.
+        // New file chosen this session - upload, then swap the local preview for the real URL.
         image = await uploadImage(pendingImageBlob.value, 'projects')
         revokePendingObjectUrl()
         pendingImageBlob.value = null
         imagePreviewUrl.value = image
       } else {
-        // Editing an existing project without touching its image - reuse the real URL
-        // already shown in the preview.
+        // Image untouched - reuse the URL already shown in the preview.
         image = imagePreviewUrl.value!
       }
     }

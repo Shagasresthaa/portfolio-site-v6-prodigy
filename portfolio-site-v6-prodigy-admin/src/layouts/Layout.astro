@@ -8,22 +8,17 @@ interface Props {
 
 const { title = 'Portfolio Admin' } = Astro.props;
 
-// Static build, no server for a real header - CSP goes in as a meta tag, so frame-ancestors is
-// a no-op (browsers ignore it outside a real HTTP header). The 3 script hashes are Astro's own
-// island-hydration runtime, not ours - recompute on Astro upgrades by grepping dist/**/*.html
-// for inline <script> tags and hashing each distinct one. style-src keeps 'unsafe-inline'
-// instead of Astro's security.csp feature: that auto-hashes styles, which invalidates
-// 'unsafe-inline' per spec and would break NavbarComponent's runtime :style binding.
-// Only rendered in prod - Vite's dev-server tooling injects its own inline scripts that don't
-// exist in the built output, so the meta tag would just block dev, not protect anything real.
+// Meta-tag CSP (static build, no server for a real header) - frame-ancestors is a no-op here.
+// __INLINE_SCRIPT_HASHES__ is a placeholder scripts/fix-csp-hashes.mjs replaces post-build with
+// real per-page hashes for Astro's inline hydration scripts; never hand-edit a hash in here.
+// style-src keeps 'unsafe-inline' (not Astro's security.csp auto-hash) for NavbarComponent's :style binding.
+// Prod-only: dev's inline scripts differ, so the meta tag would just block dev, not protect anything.
 const csp = [
 	"default-src 'self'",
-	"script-src 'self' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U=' 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-eIXWvAmxkr251LJZkjniEK5LcPF3NkapbJepohwYRIc='",
+	"script-src 'self' __INLINE_SCRIPT_HASHES__",
 	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 	"font-src 'self' https://fonts.gstatic.com",
-	// cdn.sresthaa.com is the R2 bucket's custom public domain (see R2_PUBLIC_BASE_URL) -
-	// update this again if the custom domain ever changes. blob: is for client-side image
-	// previews (URL.createObjectURL) before upload, not R2 itself.
+	// cdn.sresthaa.com is R2's custom public domain; blob: is for pre-upload local previews.
 	"img-src 'self' data: blob: https://img.youtube.com https://cdn.sresthaa.com",
 	`connect-src 'self' ${getApiBaseUrl()}`,
 	"object-src 'none'",

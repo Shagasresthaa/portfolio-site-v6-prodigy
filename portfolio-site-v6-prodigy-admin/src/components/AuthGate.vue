@@ -9,10 +9,8 @@ import { useAuthStore } from '@/stores/auth'
 const authStore = useAuthStore()
 const verified = ref(false)
 
-// Don't trust locally-cached session state alone to decide whether to render protected
-// content - a tampered/stale localStorage entry (or an expired-but-not-yet-detected token)
-// would otherwise get a real page shell rendered before any API call catches it. Confirm
-// against the server first; only then show the slot.
+// Confirm against the server before showing the slot - a stale/tampered localStorage token
+// alone shouldn't be enough to render protected content.
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
     window.location.href = '/'

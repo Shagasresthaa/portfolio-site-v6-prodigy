@@ -23,9 +23,7 @@ import com.sresthaa.admin.repository.AdminAccountRepository;
 import com.sresthaa.admin.security.JwtService;
 import com.sresthaa.storage.R2StorageService;
 
-// R2StorageService is mocked here rather than left real - the real one talks to an actual
-// Cloudflare R2 bucket over the network, which is too slow/flaky for tests and would leave
-// debris in a real bucket.
+// R2StorageService mocked - real one hits an actual Cloudflare bucket over the network.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional

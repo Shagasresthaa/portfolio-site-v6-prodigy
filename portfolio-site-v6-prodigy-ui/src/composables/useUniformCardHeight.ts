@@ -3,12 +3,9 @@ import { type ComponentPublicInstance, nextTick, onMounted, onUnmounted, ref, wa
 const MOBILE_BREAKPOINT_PX = 768
 
 /**
- * Uniform card height across a grid, as a floor rather than a live CSS stretch:
- * measured once per card set (not per render), so a card growing its own content
- * (e.g. expanding a "Read more") can still grow past the floor without dragging
- * its row-mates along. `itemsSource` should track the rendered card set (e.g. a
- * paginated/filtered list) - recalculation is tied to that changing, not to any
- * per-card content change.
+ * Uniform card height as a min-height floor, not a live CSS stretch - measured
+ * once per card *set* change (e.g. new page/filter), not per render, so one
+ * card growing its own content doesn't drag its row-mates taller.
  */
 export function useUniformCardHeight(itemsSource: WatchSource<unknown[]>) {
   const cardMinHeight = ref(0)
@@ -27,8 +24,7 @@ export function useUniformCardHeight(itemsSource: WatchSource<unknown[]>) {
       cardMinHeight.value = 0
       return
     }
-    // Reset first so a stale (possibly larger) min-height from a previous card set
-    // doesn't inflate this measurement.
+    // Reset first so a stale, larger min-height doesn't inflate this measurement.
     cardMinHeight.value = 0
     await nextTick()
     let max = 0
@@ -38,10 +34,8 @@ export function useUniformCardHeight(itemsSource: WatchSource<unknown[]>) {
     cardMinHeight.value = max
   }
 
-  // immediate: true matters - useCachedResource can resolve synchronously from
-  // localStorage (no await before that assignment when the cache is fresh), so
-  // itemsSource is sometimes already populated before this watcher is even set
-  // up, meaning it would never see a "change" to trigger on without this.
+  // immediate: true required - useCachedResource can resolve synchronously from a
+  // warm cache, so itemsSource may already be populated before this watcher exists.
   watch(itemsSource, () => nextTick(recalcCardMinHeight), { immediate: true })
 
   let resizeTimeoutId: ReturnType<typeof setTimeout> | undefined

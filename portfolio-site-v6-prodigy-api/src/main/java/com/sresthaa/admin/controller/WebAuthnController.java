@@ -38,9 +38,7 @@ public class WebAuthnController {
 		return webAuthnService.beginRegistration(currentAccount(authentication));
 	}
 
-	// Raw registrationResponseJSON body, produced by navigator.credentials.create() client-side.
-	// Caller must send Content-Type: text/plain - the body is JSON text, but binding it into a
-	// String param (rather than parsing it as a JSON object) needs Spring's plain-text converter.
+	// Body is JSON text bound as a raw String - caller must send Content-Type: text/plain.
 	@PostMapping(value = "/register/verify", consumes = MediaType.TEXT_PLAIN_VALUE)
 	public void verifyRegistration(Authentication authentication, @RequestParam String label,
 			@RequestBody String registrationResponseJSON) {

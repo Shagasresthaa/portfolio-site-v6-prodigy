@@ -1,5 +1,4 @@
-// Mirrors portfolio-site-v6-prodigy-api's BlogImageSummary - a reusable image library for blog
-// post content, uploaded once and referenced (by URL, pasted into markdown) across posts.
+// Mirrors the API's BlogImageSummary - reusable library, uploaded once and referenced by URL across posts.
 export interface BlogImage {
   id: string
   url: string

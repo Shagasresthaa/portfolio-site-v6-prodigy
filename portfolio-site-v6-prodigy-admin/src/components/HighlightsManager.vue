@@ -281,9 +281,7 @@ const form = reactive({
   videoUrl: '',
   tags: '',
 })
-// URLs actually rendered in <img :src>. Either the real, already-uploaded URLs (editing an
-// existing item, image untouched) or local object URLs for a freshly-chosen file, in which
-// case pendingImageBlobs is also set and gets uploaded on save.
+// Rendered <img :src>: real uploaded URLs, or local object URLs when pendingImageBlobs is set (uploads on save).
 const imagePreviewUrls = ref<{ image: string; thumbnailImage: string } | null>(null)
 const pendingImageBlobs = ref<ProcessedImage | null>(null)
 const processingImage = ref(false)
@@ -408,8 +406,7 @@ async function handleSave() {
 
     if (form.mediaType === 'IMAGE') {
       if (pendingImageBlobs.value) {
-        // A new file was chosen this session - upload it, then drop the local preview
-        // (revoking its object URLs) now that the real URLs are known.
+        // New file chosen this session - upload, then swap the local preview for the real URLs.
         const blobs = pendingImageBlobs.value
         ;[image, thumbnailImage] = await Promise.all([
           uploadImage(blobs.image, 'highlights'),
@@ -419,8 +416,7 @@ async function handleSave() {
         pendingImageBlobs.value = null
         imagePreviewUrls.value = { image, thumbnailImage }
       } else {
-        // Editing an existing item without touching its image - reuse the real URLs already
-        // shown in the preview.
+        // Image untouched - reuse the URLs already shown in the preview.
         image = imagePreviewUrls.value!.image
         thumbnailImage = imagePreviewUrls.value!.thumbnailImage
       }

@@ -9,9 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-// Singleton content - always exactly one row, read/replaced as a whole (see
-// HomeContentService). aboutStoryJson/timelineJson hold JSON-encoded arrays, not normalized
-// child tables - nothing ever queries into their structure, only the whole blob.
+// Singleton - always exactly one row. aboutStoryJson/timelineJson are JSON-encoded arrays, not child tables.
 @Entity
 @Table(name = "home_content")
 public class HomeContent {

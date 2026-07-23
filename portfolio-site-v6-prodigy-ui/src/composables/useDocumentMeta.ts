@@ -18,19 +18,13 @@ export function setMetaTag(attr: 'name' | 'property', key: string, content: stri
 }
 
 /**
- * Sets document.title and the og:/twitter: meta tags for link previews (used by
- * BlogPostComponent). This only affects this browser's own tab/any client-side
- * preview - it does NOT make sharing the URL produce a real rich preview in
- * iMessage/Discord/WhatsApp/Slack, since those crawlers fetch the raw server
- * HTML and don't execute JS. A real preview needs the backend to serve
- * per-post meta tags in the initial response - deferred until that exists
- * (see CLAUDE.md).
+ * Sets document.title and og:/twitter: meta tags, for this tab and any
+ * client-rendered preview only - link-preview crawlers fetch raw server HTML
+ * and don't execute JS, so real rich previews come from the API's
+ * BlogPreviewController instead.
  *
- * No unmount cleanup here - router.ts's afterEach unconditionally resets
- * these same tags to site-wide defaults (from stores/siteSettings.ts) on
- * every navigation, so leaving this route always restores a sane baseline
- * without explicit teardown (same reasoning documented there for why the
- * title itself was never restored on unmount either).
+ * No unmount cleanup - router.ts's afterEach resets these to site defaults
+ * on every navigation regardless.
  */
 export function useDocumentMeta(meta: Ref<DocumentMeta | null>) {
   watch(

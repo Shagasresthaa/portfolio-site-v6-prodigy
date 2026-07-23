@@ -26,9 +26,7 @@ public class AccountService {
 		this.jwtService = jwtService;
 	}
 
-	// Re-issues a token because the old one remains cryptographically valid until it naturally
-	// expires - the password change itself doesn't revoke it. That's an accepted gap for a
-	// single-admin, single-session tool; a real token-blocklist would be overkill here.
+	// Re-issues a token - the old one stays valid until it expires naturally, no blocklist exists.
 	public LoginResponse changePassword(AdminAccount account, String currentPassword, String newPassword) {
 		requireCurrentPassword(account, currentPassword);
 

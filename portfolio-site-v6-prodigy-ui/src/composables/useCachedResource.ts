@@ -22,11 +22,7 @@ function writeCache<T>(key: string, data: T) {
   localStorage.setItem(key, JSON.stringify(entry))
 }
 
-/**
- * Loads JSON from `url`, caching it in localStorage under `key` for `ttlMs`.
- * Swapping `url` from a static JSON file to a real API endpoint later requires
- * no other changes here - the caching/staleness logic stays the same.
- */
+/** Loads JSON from `url`, caching it in localStorage under `key` for `ttlMs`. */
 export function useCachedResource<T>(key: string, url: string, ttlMs = ONE_WEEK_MS) {
   const data = ref<T | null>(null)
   const loading = ref(false)

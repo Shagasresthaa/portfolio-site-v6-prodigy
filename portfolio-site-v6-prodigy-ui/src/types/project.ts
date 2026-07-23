@@ -20,10 +20,7 @@ export interface Project {
   techStacks: string
   projectUrl?: string
   liveUrl?: string
-  // Showcase media: a screenshot (image) or an embedded demo video
-  // (videoUrl, e.g. YouTube) - mirrors HighlightItem's mediaType split.
-  // Missing/undefined is treated as IMAGE for older saved data that
-  // predates this field.
+  // Screenshot (image) or embedded demo video (videoUrl). Undefined = IMAGE (pre-dates this field).
   mediaType?: ProjectMediaType
   image?: string
   videoUrl?: string

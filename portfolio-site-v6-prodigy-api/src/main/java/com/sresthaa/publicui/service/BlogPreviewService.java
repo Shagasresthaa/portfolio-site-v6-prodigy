@@ -7,12 +7,8 @@ import org.springframework.web.util.HtmlUtils;
 
 import com.sresthaa.publicui.dto.BlogSummary;
 
-// Pure string transform, no HTTP/DB involved - see UiShellClient for why that's split out. Mirrors
-// the dev-only blogPostMetaDevPlugin in the ui's vite.config.ts, just reading from the real
-// database instead of a JSON fixture. Crawlers (Facebook/Slack/LinkedIn/etc.) fetch a link's raw
-// HTML and never execute JS, so they'd otherwise only ever see the generic static shell - real
-// browsers get this exact same shell too (harmless, since the same <div id="app">+script boots
-// the SPA identically), so there's no need to sniff user-agents here.
+// Splices real per-post meta tags into ui's shell HTML, for crawlers that never execute JS.
+// Same shell serves real browsers too (harmless), so no user-agent sniffing needed.
 @Service
 public class BlogPreviewService {
 

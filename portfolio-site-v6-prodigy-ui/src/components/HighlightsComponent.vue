@@ -156,9 +156,7 @@ import HighlightCard from './HighlightCard.vue'
 import TagFilterPopover from './TagFilterPopover.vue'
 import type { HighlightItem } from '@/types/highlight'
 
-// Cache key changed (was "highlights-content") since the old mock's cached shape
-// ({ items: [...] }) doesn't match the real API's plain-array response - reusing the old
-// key would read a stale, wrongly-shaped cache back as if it were the new format.
+// -v2: old mock's `{ items: [...] }` cache shape doesn't match the API's plain array.
 const { data: highlightsContent } = useCachedResource<HighlightItem[]>(
   'highlights-content-v2',
   `${getApiBaseUrl()}/api/highlights`,

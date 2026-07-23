@@ -148,9 +148,7 @@ import ProjectCard from './ProjectCard.vue'
 import TagFilterPopover from './TagFilterPopover.vue'
 import type { Project } from '@/types/project'
 
-// Cache key changed (was "projects-content") since the old mock's cached shape
-// ({ projects: [...] }) doesn't match the real API's plain-array response - reusing the old
-// key would read a stale, wrongly-shaped cache back as if it were the new format.
+// -v2: old mock's `{ projects: [...] }` cache shape doesn't match the API's plain array.
 const { data: projectsContent } = useCachedResource<Project[]>(
   'projects-content-v2',
   `${getApiBaseUrl()}/api/projects`,

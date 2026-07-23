@@ -167,12 +167,10 @@ import type { BlogPost } from '@/types/blog'
 
 const route = useRoute()
 
-// Safe to read once (not reactively) - BlogPostView keys this component on the slug param,
-// so a different post is a full remount, not a param update.
+// Read once - BlogPostView keys this component on slug, so a different post remounts fully.
 const slug = typeof route.params.slug === 'string' ? route.params.slug : ''
 
-// The API 404s an unpublished/nonexistent slug, so a null `post` once loading finishes
-// (no `error`-specific handling needed) is what renders as "not found" below.
+// API 404s an unpublished/nonexistent slug - a null `post` post-load renders as "not found".
 const { data: post, loading } = useCachedResource<BlogPost>(
   `blog-post-${slug}`,
   `${getApiBaseUrl()}/api/blog/${slug}`,

@@ -121,9 +121,8 @@ public class BlogService {
 		return BlogCommentSummary.from(blogCommentRepository.save(comment));
 	}
 
-	// No per-visitor identity to dedup against by design (see memory:
-	// no-user-accounts-by-design) - counts are adjusted blindly per the client-supplied
-	// transition. Clamped at 0 so a stale/replayed "remove" can't drive a count negative.
+	// No visitor identity to dedup against - applies the client-supplied transition blindly,
+	// clamped at 0 so a stale/replayed "remove" can't go negative.
 	public BlogReactionCounts applyReaction(String slug, BlogReactionRequest request) {
 		Blog blog = findPublishedBlogBySlug(slug);
 

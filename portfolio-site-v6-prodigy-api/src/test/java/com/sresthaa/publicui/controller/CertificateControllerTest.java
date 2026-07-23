@@ -64,9 +64,7 @@ class CertificateControllerTest {
 
 	@Test
 	void listAllIsPublicAndReturnsNewestFirst() throws Exception {
-		// This dev DB has real certificates uploaded outside of this test's transaction (via the
-		// admin UI) - clear it within the transaction so the count assertion below is exact;
-		// rolled back after, doesn't touch the real rows.
+		// Defensive clear (test DB should already be empty) so the count assertion below is exact.
 		certificateRepository.deleteAll();
 		certificateRepository.save(new Certificate("https://cdn.example/first.webp", null));
 		certificateRepository.save(new Certificate("https://cdn.example/second.webp", "AWS Certified"));

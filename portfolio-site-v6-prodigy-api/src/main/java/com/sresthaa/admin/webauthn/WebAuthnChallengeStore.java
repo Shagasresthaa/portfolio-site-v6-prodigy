@@ -9,10 +9,8 @@ import org.springframework.stereotype.Component;
 
 import com.webauthn4j.data.client.challenge.Challenge;
 
-// Bridges the two requests each WebAuthn ceremony needs (get challenge, then verify response).
-// No HTTP session exists (stateless JWT API), so this holds pending challenges in memory instead.
-// Single admin account in practice, so keying by username and holding process memory is enough -
-// no need for anything shared/persisted across instances.
+// Holds pending WebAuthn challenges in memory, keyed by username - no HTTP session exists
+// (stateless JWT API) to hold them instead.
 @Component
 public class WebAuthnChallengeStore {
 

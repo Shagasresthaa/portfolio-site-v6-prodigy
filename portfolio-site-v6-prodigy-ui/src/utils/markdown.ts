@@ -45,13 +45,7 @@ marked.use({
   },
 })
 
-/**
- * Renders markdown to sanitized HTML for use with v-html. Sanitizing isn't
- * strictly load-bearing yet (post content is author-controlled sample JSON,
- * not user input), but this is the exact spot a real CMS-backed content field
- * will eventually flow through, so it stays defensive rather than assuming
- * trust that won't hold once there's a real backend.
- */
+/** Renders markdown to sanitized HTML for use with v-html. */
 export function renderMarkdown(markdown: string): string {
   return DOMPurify.sanitize(marked.parse(markdown, { async: false }))
 }

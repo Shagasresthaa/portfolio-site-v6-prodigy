@@ -1,5 +1,4 @@
-// Mirrors portfolio-site-v6-prodigy-ui's src/types/timeline.ts - keep in sync,
-// this is the shape TimelineWheel.vue there expects from the timeline array.
+// Mirrors the UI's src/types/timeline.ts - keep in sync.
 export interface TimelineEvent {
   title: string
   position: string

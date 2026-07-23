@@ -6,8 +6,7 @@ export interface HighlightItem {
   description?: string
   caption?: string
   mediaType: HighlightMediaType
-  // IMAGE only: thumbnailImage is what the card grid shows, image is the
-  // full-size version shown in the modal when the thumbnail is clicked.
+  // IMAGE only: thumbnailImage is the grid card, image is the full-size modal view.
   thumbnailImage?: string
   image?: string
   // VIDEO only.

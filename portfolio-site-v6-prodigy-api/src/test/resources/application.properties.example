@@ -1,12 +1,8 @@
 spring.application.name=portfolio-site-v6-prodigy-api
 
-# Fully self-contained (not just a -local override) - src/test/resources takes classpath
-# priority over src/main/resources for the test task, so this replaces application.properties
-# entirely rather than layering on top of it. Points at its own database so test runs never
-# read/write the real local dev data in application-local.properties's database - see
-# BlogControllerTest/HighlightControllerTest history for what happens when tests share a DB
-# with manual dev testing (count/list assertions silently pick up whatever you last created
-# by hand and fail with an off-by-one).
+# Fully self-contained, not a -local override - src/test/resources shadows src/main/resources's
+# application.properties entirely for the test classpath. Own database so tests never touch
+# real dev data in application-local.properties's DB.
 spring.datasource.url=jdbc:postgresql://localhost:5430/your_test_database_name
 spring.datasource.username=prodigy
 spring.datasource.password=password-123456

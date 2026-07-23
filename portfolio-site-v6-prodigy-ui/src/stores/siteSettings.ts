@@ -3,8 +3,7 @@ import { computed } from 'vue'
 import { useCachedResource } from '@/composables/useCachedResource'
 import type { SiteSettings } from '@/types/siteSettings'
 
-// Used until site-settings.json loads (or if it fails to) - keeps the tab
-// title sane in the meantime rather than blank.
+// Fallback until site-settings.json loads (or if it fails).
 const DEFAULT_SITE_TITLE = 'Shaga Sresthaa'
 
 export const useSiteSettingsStore = defineStore('siteSettings', () => {

@@ -151,8 +151,7 @@ const showPassword = ref(false)
 const submitting = ref(false)
 const error = ref<string | null>(null)
 
-// Already have a valid session (e.g. came back to `/` after logging in) -
-// skip straight to the home page rather than showing the form again.
+// Already authenticated - skip straight to the home page.
 onMounted(() => {
   if (authStore.isAuthenticated) window.location.href = '/home'
 })

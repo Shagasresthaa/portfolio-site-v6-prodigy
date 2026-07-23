@@ -1,16 +1,7 @@
-// Mirrors portfolio-site-v6-prodigy-ui's src/types/siteSettings.ts - keep in
-// sync, this is the shape stores/siteSettings.ts and router/index.ts there
-// expect from site-settings.json.
+// Mirrors the UI's src/types/siteSettings.ts - keep in sync.
 export interface SiteSettings {
-  // Tab-title suffix, e.g. "Blog - {siteTitle}".
-  siteTitle: string
-  // Fallback meta/OG description for pages with no content of their own to
-  // pull from (Home/Projects/Highlights/Contact - only blog posts currently
-  // have per-page descriptions).
-  defaultDescription: string
-  // Fallback og:image/twitter:image for those same pages.
-  defaultShareImage?: string
-  // Site-wide robots directive - false emits noindex,nofollow everywhere.
-  // Useful while this is still in active dev, not meant to stay off in prod.
-  searchIndexingEnabled: boolean
+  siteTitle: string // Tab-title suffix, e.g. "Blog - {siteTitle}".
+  defaultDescription: string // Meta/OG fallback for pages with no per-entity content.
+  defaultShareImage?: string // og:image/twitter:image fallback for those same pages.
+  searchIndexingEnabled: boolean // false emits noindex,nofollow site-wide.
 }

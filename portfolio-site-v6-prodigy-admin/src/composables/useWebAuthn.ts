@@ -1,8 +1,4 @@
-// Thin wrapper around the browser's native WebAuthn L3 JSON conversion methods
-// (PublicKeyCredential.parseCreationOptionsFromJSON/parseRequestOptionsFromJSON,
-// credential.toJSON()). These pair directly with webauthn4j's own JSON (de)serialization
-// on the API side - both sides use base64url for challenge/id byte fields - so no manual
-// ArrayBuffer/base64 conversion is needed here.
+// Wraps native WebAuthn L3 JSON methods - pair directly with webauthn4j's base64url (de)serialization, no manual ArrayBuffer conversion needed.
 
 export class WebAuthnUnsupportedError extends Error {
   constructor() {
