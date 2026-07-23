@@ -39,7 +39,9 @@
         <!-- prose-pre/prose-code overrides hand styling off to the pre/code blocks
         since renderMarkdown already outputs fully-styled highlight.js markup -->
         <div
-          class="prose dark:prose-invert prose-pre:m-0 prose-pre:bg-transparent prose-pre:p-0 prose-code:before:content-none prose-code:after:content-none font-kalam mb-12 max-w-none"
+          class="prose dark:prose-invert prose-pre:m-0 prose-pre:bg-transparent prose-pre:p-0
+          prose-code:before:content-none prose-code:after:content-none font-kalam mb-12 max-w-none
+          text-justify"
           v-html="renderedContent"
         />
 
