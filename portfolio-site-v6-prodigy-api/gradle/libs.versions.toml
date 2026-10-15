@@ -1,6 +1,6 @@
 [versions]
 jjwt = "0.13.0"
-webauthn4j = "0.31.8.RELEASE"
+webauthn4j = "0.31.11.RELEASE"
 totp = "1.7.1"
 awssdk = "2.48.3"
 
